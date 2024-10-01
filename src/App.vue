@@ -1,0 +1,12 @@
+<template>
+  <Toaster position="top-center" closeButton />
+  <router-view />
+</template>
+
+<!--
+<style lang="scss">
+// Import Main styles for this application
+//@import 'styles/style';
+@import 'styles/custom';
+</style>
+-->
