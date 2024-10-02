@@ -7,7 +7,10 @@
             <Toaster position="top-center" closeButton/>
             <ModalPic :isShow="isShow" :incharge_id="incharge_id" :machine_nm="machine_nm"
                       :plan_check_dt="plan_check_dt"
-                      :schedule_id="schedule_id" @showChanges="showChanges(state)" :selected-pics="selectedPics"/>
+                      :schedule_id="schedule_id"
+                      :selected-pics="selectedPics"
+                      :schedule_checker_id="schedule_checker_id"
+                      @showChanges="showChanges($event)"/>
             <SearchBar @getSchedules="getSchedules"/>
             <DropBarDelay/>
             <StatusTpm :filter="filter"/>
@@ -64,58 +67,43 @@
                       </tr>
                       <template v-else-if="schedules && Object.keys(schedules).length > 0">
                         <tr v-for="(schedule, key, ipar) in schedules" :key="key">
-                          <td>{{ ipar + 1 }}</td>
-                          <td>{{ schedule[0].line_nm }}</td>
-                          <td>{{ schedule[0].machine_nm }}</td>
-                          <td>{{ schedule[0].itemcheck_nm }}</td>
-                          <td>{{ schedule[0].val_periodic }}</td>
+                          <td>{{ schedule.no }}</td>
+                          <td>{{ schedule.line_nm }}</td>
+                          <td>{{ schedule.machine_nm }}</td>
+                          <td>{{ schedule.itemcheck_nm }}</td>
+                          <td>{{ schedule.val_periodic }}</td>
                           <td class="text-center">
-                            {{ schedule[0].period_nm }}
+                            {{ schedule.period_nm }}
                           </td>
                           <td class="text-center">
-                            {{ schedule[0].incharge_nm }}
+                            {{ schedule.incharge_nm }}
+
                           </td>
-                          <td v-if="schedule[0].checkers.length > 0" class="sticky-pic">
-                            <template v-for="user in schedule[0].checkers" :key="user.user_id">
-                              <CButton color="success" size="sm" @click="confirmShow(schedule[0])" style="z-index: 1">
-                                {{ user.user_nm }}
-                              </CButton>
-                            </template>
+                          <td v-if="schedule.checkers" class="sticky-pic">
+                            <CButton color="success" size="sm" @click="confirmShow(schedule)" style="z-index: 1">
+                              {{ schedule.checkers.user_nm }}
+                            </CButton>
                           </td>
                           <td v-else class="sticky-pic">
-                            <CButton class="btn btn-sm w-100" color="info" @click="confirmShow(schedule[0])">ASSIGN
+                            <CButton class="btn btn-sm w-100" color="info" @click="confirmShow(schedule)">ASSIGN
                             </CButton>
                           </td>
                           <template v-for="date in dates" :key="date">
-                            <td v-if="schedule.find((item) => {
-                              return item.day_idx == date;
-                            })">
+                            <td v-if="schedule.day_idx === date">
                               <!-- BTN FOR ASSIGN PIC -->
-                              <CButton size="lg" v-if="schedule.find((item) => {
-                                return item.day_idx == date;
-                              }).checkers.length == 0" :style="`height: 35px ;background-color: ${schedule.find((item) => {
-                                return item.day_idx == date;
-                              }).color_tag}`" @click="
-                                confirmShow(
-                                  schedule.find((item) => {
-                                    return item.day_idx == date;
-                                  })
-                                )
+                              <CButton size="lg" v-if="!schedule.checkers || Object.keys(schedule.checkers).length == 0"
+                                       :style="`height: 35px ;background-color: ${schedule.color_tag}`" @click="
+                                confirmShow(schedule)
                               "></CButton>
                               <!-- BTN FOR EXECUTION -->
-                              <CButton size="lg" v-else :style="`height: 35px; background-color: ${schedule.find((item) => {
-                                return item.day_idx == date;
-                              }).color_tag}`" @click="
-                                executionPage(
-                                  schedule.find((item) => {
-                                    return item.day_idx == date;
-                                  })
-                                )
+                              <CButton size="lg" v-else :style="`height: 35px; background-color: ${schedule.color_tag}`"
+                                       @click="
+                                executionPage(schedule)
                               "></CButton>
                             </td>
                             <td v-else></td>
                           </template>
-                          <td>{{ schedule[0].next_check.split("T")[0] }}</td>
+                          <td>{{ schedule.next_check.split("T")[0] }}</td>
                         </tr>
                       </template>
                       <template v-else>
@@ -177,6 +165,7 @@ import StatusTpm from "../../views/charts/StatusTpm.vue";
 import DropBarDelay from "../../components/Tpm/DropBarDelay.vue";
 import {CButton} from "@coreui/vue";
 import CustPagination from "@/components/Tpm/CustPagination.vue";
+import ModalExecuteCounter from "@/components/Tpm/ModalExecuteCounter.vue";
 
 export default {
   name: "TpmMonitoring",
@@ -210,6 +199,7 @@ export default {
       ],
       selectedPics: null,
       loading: false,
+      schedule_checker_id: null,
     };
   },
 
@@ -229,7 +219,7 @@ export default {
         this.totalPages = Math.ceil(response.total / this.limit); // Calculate total pages
       } catch (error) {
         console.log(error);
-      } finally{
+      } finally {
         this.loading = false;
       }
     },
@@ -244,19 +234,23 @@ export default {
       }
     },
     showChanges(state) {
-      this.isShow = state;
-      this.getSchedules(this.filter);
+      this.isShow = false;
+      //determine schedule should refetch from changes Modal
+      if (state) {
+        this.getSchedules(this.filter);
+      }
     },
 
     async confirmShow(schedule) {
-      await this.showChanges(true);
+      this.isShow = true;
       console.log(schedule);
       this.machine_nm = schedule.machine_nm;
       this.incharge_id = schedule.incharge_id;
       this.schedule_id = schedule.schedule_id;
       this.plan_check_dt = schedule.plan_check_dt;
-      this.getSchedules(this.filter);
+      this.schedule_checker_id = schedule.schedule_checker_id;
       this.selectedPics = schedule.checkers;
+      //this.getSchedules(this.filter);
     },
 
     prevPage() {
@@ -281,9 +275,10 @@ export default {
 
     async handlePageChange(event) {
       this.currentPage = event;
-    }
+    },
   },
   components: {
+    ModalExecuteCounter,
     CustPagination,
     SearchBar,
     StatusTpm,
