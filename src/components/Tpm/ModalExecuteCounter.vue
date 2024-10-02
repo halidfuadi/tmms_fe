@@ -1,5 +1,5 @@
 <template>
-  <Toaster position="top-center" closeButton />
+  <Toaster position="top-center" closeButton/>
   <CModal
     :visible="is_show"
     size="xl"
@@ -11,7 +11,7 @@
     </CModalHeader>
     <CModalBody>
       <CRow class="mb-2">
-        <CCol lg="6">
+        <CCol :lg="showCounterDetails ? 6 : 12">
           <CRow>
             <CCol class="mb-2">
               <CFormInput
@@ -34,12 +34,20 @@
                 :value="(this.details.init_counter_dt)?.slice(0, 10)"/>
             </CCol>
           </CRow>
-          <CProgress v-if="item.percentage < 75" :height="35" variant="striped" animated color="success" :value="item.percentage">{{ item.percentage }}%</CProgress>
-          <CProgress v-if="item.percentage >= 75 && item.percentage < 90" :height="35" variant="striped" animated color="warning" :value="item.percentage">{{ item.percentage }}%</CProgress>
-          <CProgress v-if="item.percentage >= 90 && item.percentage <= 100" :height="35" variant="striped" animated color="danger" :value="item.percentage">{{ item.percentage }}%</CProgress>
-          <CProgress v-if="item.percentage > 100" :height="35" variant="striped" animated color="dark" :value="item.percentage">{{ item.percentage }}%</CProgress>
+          <CProgress v-if="item.percentage < 75" :height="35" variant="striped" animated color="success"
+                     :value="item.percentage">{{ item.percentage }}%
+          </CProgress>
+          <CProgress v-if="item.percentage >= 75 && item.percentage < 90" :height="35" variant="striped" animated
+                     color="warning" :value="item.percentage">{{ item.percentage }}%
+          </CProgress>
+          <CProgress v-if="item.percentage >= 90 && item.percentage <= 100" :height="35" variant="striped" animated
+                     color="danger" :value="item.percentage">{{ item.percentage }}%
+          </CProgress>
+          <CProgress v-if="item.percentage > 100" :height="35" variant="striped" animated color="dark"
+                     :value="item.percentage">{{ item.percentage }}%
+          </CProgress>
         </CCol>
-        <CCol lg="6">
+        <CCol lg="6" v-if="showCounterDetails">
           <CCard>
             <CCardHeader>
               Counter Details
@@ -47,22 +55,27 @@
             <CCardBody>
               <table class="table table-bordered table-striped">
                 <thead>
-                  <tr>
-                    <th class="text-center">Initial Counter</th>
-                    <th class="text-center">Machine Counter</th>
-                    <th class="text-center">Lifespan</th>
-                    <th class="text-center">Estimation Date</th>
-                    <th class="text-center">Day Remain</th>
-                  </tr>
+                <tr>
+                  <th class="text-center">Initial Counter</th>
+                  <th class="text-center">Machine Counter</th>
+                  <th class="text-center">Lifespan</th>
+                  <th class="text-center">Estimation Date</th>
+                  <th class="text-center">Day Remain</th>
+                </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td class="text-center">{{ this.details.init_counter }}</td>
-                    <td class="text-center">{{ this.details.last_counter }}</td>
-                    <td class="text-center">{{ (item.last_counter - item.init_counter)?.toLocaleString('de-DE') }} / {{ (item.lifespan_counter)?.toLocaleString('de-DE') }}</td>
-                    <td class="text-center">{{ item.est_dt?.slice(0, 10) }}</td>
-                    <td class="text-center">{{ Math.ceil((new Date(item?.est_dt) - new Date()) / (1000 * 3600 * 24)) >= 0 ? Math.ceil((new Date(item?.est_dt) - new Date()) / (1000 * 3600 * 24)) + ' Days' : 'Overdue' }}</td>
-                  </tr>
+                <tr>
+                  <td class="text-center">{{ this.details.init_counter }}</td>
+                  <td class="text-center">{{ this.details.last_counter }}</td>
+                  <td class="text-center">{{ (item.last_counter - item.init_counter)?.toLocaleString('de-DE') }} /
+                    {{ (item.lifespan_counter)?.toLocaleString('de-DE') }}
+                  </td>
+                  <td class="text-center">{{ item.est_dt?.slice(0, 10) }}</td>
+                  <td class="text-center">{{
+                      Math.ceil((new Date(item?.est_dt) - new Date()) / (1000 * 3600 * 24)) >= 0 ? Math.ceil((new Date(item?.est_dt) - new Date()) / (1000 * 3600 * 24)) + ' Days' : 'Overdue'
+                    }}
+                  </td>
+                </tr>
                 </tbody>
               </table>
             </CCardBody>
@@ -71,142 +84,146 @@
       </CRow>
 
       <!-- <CRow> -->
-        <!-- <CCol lg="8"> -->
-          <CCard class="mb-2">
-            <CCardBody>
+      <!-- <CCol lg="8"> -->
+      <CCard class="mb-2">
+        <CCardBody>
+          <CRow>
+            <CCol>
               <CRow>
                 <CCol>
-                  <CRow>
-                    <CCol>
-                      <CFormInput
-                        label="Method"
-                        disabled
-                        :value="this.details.method_check"/>
-                    </CCol>
-                    <CCol>
-                      <CFormInput
-                        label="MP"
-                        disabled
-                        :value="this.details.mp + ' Person'"/>
-                    </CCol>
-                  </CRow>
                   <CFormInput
-                    label="Standard Measurement"
+                    label="Method"
                     disabled
-                    :value="this.details.standard_measurement"/>
-                  <CFormInput
-                    label="Upper and Lower Limit"
-                    disabled
-                    :value="this.details.upper_limit + ' ~ ' + this.details.lower_limit"/>
+                    :value="this.details.method_check"/>
                 </CCol>
                 <CCol>
-                  <CForm>
-                    <CFormTextarea
-                      label="Details"
-                      disabled
-                      rows="7"
-                      :value="this.details.details"/>
-                  </CForm>
-                </CCol>
-              </CRow>
-              <CollapseSparepartList
-                ref="collapseSparepartList"
-                is_execute="true"
-                :visibleSparepart="visibleSparepart"
-                :ledger_itemcheck_id="item.ledger_itemcheck_id"/>
-            </CCardBody>
-          </CCard>
-
-          <CCard>
-            <CCardHeader>Execution</CCardHeader>
-            <CCardBody>
-              <CRow class="mb-2">
-                <CCol lg="6">
-                  <CCard class="mb-2">
-                    <CCardBody>
-                      <CRow>
-                        <CCol>
-                          <CFormInput
-                            label="Plan Check Date"
-                            disabled
-                            :value="item.est_dt?.slice(0, 10)"/>
-                          <CFormInput
-                            label="Start"
-                            type="time"
-                            v-model="form.start_time"/>
-                        </CCol>
-                        <CCol>
-                          <CFormInput
-                            label="Actual Date"
-                            type="date"
-                            v-model="form.actual_dt"/>
-                          <CFormInput
-                            label="End"
-                            type="time"
-                            v-model="form.end_time"/>
-                        </CCol>
-                      </CRow>
-                    </CCardBody>
-                  </CCard>
-                </CCol>
-                <CCol lg="6">
-                  <CFormLabel>PIC</CFormLabel>
-                  <treeselect required v-model="form.pic" id="pic" label="Input PIC" :multiple="false" placeholder="PIC" :options="users" />
-                  <CFormLabel>Input Judgement</CFormLabel>
-                  <treeselect required v-model="selected_judge" id="judgement" label="Judgement" :multiple="false" placeholder="Judgement" :options="optionsJudge" />
-                </CCol>
-              </CRow>
-              <CRow>
-                <CCol v-if="containsNumber(this.details.standard_measurement) || containsNumber(this.details.upper_limit) || containsNumber(this.details.lower_limit)">
                   <CFormInput
-                    required
-                    label="Input Measurement"
-                    v-model="form.measurement"/>
+                    label="MP"
+                    disabled
+                    :value="this.details.mp + ' Person'"/>
                 </CCol>
               </CRow>
+              <CFormInput
+                label="Standard Measurement"
+                disabled
+                :value="this.details.standard_measurement"/>
+              <CFormInput
+                label="Upper and Lower Limit"
+                disabled
+                :value="this.details.upper_limit + ' ~ ' + this.details.lower_limit"/>
+            </CCol>
+            <CCol>
+              <CForm>
+                <CFormTextarea
+                  label="Details"
+                  disabled
+                  rows="7"
+                  :value="this.details.details"/>
+              </CForm>
+            </CCol>
+          </CRow>
+          <CollapseSparepartList
+            ref="collapseSparepartList"
+            is_execute="true"
+            :visibleSparepart="visibleSparepart"
+            :ledger_itemcheck_id="item.ledger_itemcheck_id"/>
+        </CCardBody>
+      </CCard>
 
-              <CCard v-if="is_judgement">
-                <CCardHeader>
-                  Input Finding
-                </CCardHeader>
+      <CCard>
+        <CCardHeader>Execution</CCardHeader>
+        <CCardBody>
+          <CRow class="mb-2">
+            <CCol lg="6">
+              <CCard class="mb-2">
                 <CCardBody>
                   <CRow>
                     <CCol>
                       <CFormInput
-                        label="Problem"
-                        placeholder="What's the problem?"
-                        v-model="NGForm.problem"/>
-                      <CFormTextarea
-                        label="Action / Countermeasure"
-                        rows="7"
-                        placeholder="Input TPM Finding"
-                        v-model="NGForm.notes"/>
-                    </CCol>
-                    <CCol lg="6">
-                      <CFormLabel>PIC</CFormLabel>
-                      <treeselect v-model="NGForm.pic" id="pic" label="Input PIC" :multiple="false" placeholder="PIC" :options="users" />
-
-                      <CFormInput
-                        label="Plan Date"
-                        type="date"
-                        v-model="NGForm.plan_finding_dt"/>
-
-                      <CFormInput
-                        label="Image"
-                        type="file"
+                        label="Plan Check Date"
                         disabled
-                        v-model="NGForm.image"/>
+                        :value="item.est_dt?.slice(0, 10)"/>
+                      <CFormInput
+                        label="Start"
+                        type="time"
+                        v-model="form.start_time"/>
+                    </CCol>
+                    <CCol>
+                      <CFormInput
+                        label="Actual Date"
+                        type="date"
+                        v-model="form.actual_dt"/>
+                      <CFormInput
+                        label="End"
+                        type="time"
+                        v-model="form.end_time"/>
                     </CCol>
                   </CRow>
                 </CCardBody>
               </CCard>
+            </CCol>
+            <CCol lg="6">
+              <CFormLabel>PIC</CFormLabel>
+              <treeselect required v-model="form.pic" id="pic" label="Input PIC" :multiple="false" placeholder="PIC"
+                          :options="users"/>
+              <CFormLabel>Input Judgement</CFormLabel>
+              <treeselect required v-model="selected_judge" id="judgement" label="Judgement" :multiple="false"
+                          placeholder="Judgement" :options="optionsJudge"/>
+            </CCol>
+          </CRow>
+          <CRow>
+            <CCol
+              v-if="containsNumber(this.details.standard_measurement) || containsNumber(this.details.upper_limit) || containsNumber(this.details.lower_limit)">
+              <CFormInput
+                required
+                label="Input Measurement"
+                v-model="form.measurement"/>
+            </CCol>
+          </CRow>
+
+          <CCard v-if="is_judgement">
+            <CCardHeader>
+              Input Finding
+            </CCardHeader>
+            <CCardBody>
+              <CRow>
+                <CCol>
+                  <CFormInput
+                    label="Problem"
+                    placeholder="What's the problem?"
+                    v-model="NGForm.problem"/>
+                  <CFormTextarea
+                    label="Action / Countermeasure"
+                    rows="7"
+                    placeholder="Input TPM Finding"
+                    v-model="NGForm.notes"/>
+                </CCol>
+                <CCol lg="6">
+                  <CFormLabel>PIC</CFormLabel>
+                  <treeselect v-model="NGForm.pic" id="pic" label="Input PIC" :multiple="false" placeholder="PIC"
+                              :options="users"/>
+
+                  <CFormInput
+                    label="Plan Date"
+                    type="date"
+                    v-model="NGForm.plan_finding_dt"/>
+
+                  <CFormInput
+                    label="Image"
+                    type="file"
+                    disabled
+                    v-model="NGForm.image"/>
+                </CCol>
+              </CRow>
             </CCardBody>
           </CCard>
-        <!-- </CCol> -->
+        </CCardBody>
+      </CCard>
+      <!-- </CCol> -->
 
-        <!-- <CCol lg="4"> -->
+      <!-- <CCol lg="4"> -->
 
-        <!-- </CCol> -->
+      <!-- </CCol> -->
       <!-- </CRow> -->
 
 
@@ -215,7 +232,7 @@
       <CButton color="secondary" @click="$emit('close-modal', false)">
         Close
       </CButton>
-      <CButton color="primary" @click="submitData(form, NGForm, item)" >Save changes</CButton>
+      <CButton color="primary" @click="submitData(form, NGForm, item)">Save changes</CButton>
     </CModalFooter>
   </CModal>
 </template>
@@ -223,7 +240,7 @@
 <script>
 import api from "@/apis/CommonAPI";
 import Treeselect from "vue3-treeselect";
-import { toast, Toaster } from "vue-sonner";
+import {toast, Toaster} from "vue-sonner";
 import CollapseSparepartList from "./CollapseSparepartList.vue";
 import ItemAndMPtrends from "./ItemAndMPtrends.vue";
 
@@ -239,8 +256,8 @@ export default {
       options: [],
       toaster: [],
       optionsJudge: [
-        { id: '0', label: 'OK' },
-        { id: '1', label: 'NG' },
+        {id: '0', label: 'OK'},
+        {id: '1', label: 'NG'},
       ],
       is_judgement: false, // Variable to track if NG is selected
       selected_judge: null, // Variable to track the selected judgement
@@ -278,7 +295,7 @@ export default {
 
     async getUsers(incharge_id = null) {
       try {
-        let { data } = await api.get(
+        let {data} = await api.get(
           `/tpm/users`,
           `?incharge_id=${incharge_id}`
         );
@@ -293,7 +310,7 @@ export default {
       }
     },
 
-    async submitData(data, NGData){
+    async submitData(data, NGData) {
       try {
         data.judgement = this.selected_judge
 
@@ -308,7 +325,7 @@ export default {
           pic_nm: data.pic,
         }
 
-        if(this.is_judgement){
+        if (this.is_judgement) {
           let dataNG = {
             ...execute,
             plan_check_dt: NGData.plan_finding_dt,
@@ -321,7 +338,7 @@ export default {
 
           let upload = await api.post(`/tpm/counter/upload-execute`, dataNG)
           toast.success(`${upload.data.message}`, {timeout: 2000})
-        }else{
+        } else {
           let upload = await api.post(`/tpm/counter/upload-execute`, execute)
           toast.success(`${upload.data.message}`, {timeout: 2000})
         }
@@ -345,6 +362,10 @@ export default {
   props: {
     is_show: Boolean,
     item: Object,
+    showCounterDetails: {
+      type: Boolean,
+      default: true,
+    }
   },
 
   mounted() {

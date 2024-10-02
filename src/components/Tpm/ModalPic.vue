@@ -1,43 +1,38 @@
 <template>
-  <CModal :visible="is_show" backdrop="static" @close="changesShow()">
+  <CModal :visible="isShow" backdrop="static" @close="changesShow()">
     <CModalHeader closeButton>Assign PIC</CModalHeader>
     <CModalBody>
       <CRow>
-        <CCol lg="6">
-          <CInputGroup class="mb-3">
+        <CCol lg="12" class="mb-3">
+          <CInputGroup>
             <CInputGroupText as="label" for="MachineSelect">Machine</CInputGroupText>
             <CFormInput disabled type="text" class="form-control" placeholder="Machine" :value="machine_nm">
             </CFormInput>
           </CInputGroup>
         </CCol>
-      </CRow>
-      <CRow>
-        <CCol lg="12">
-          <div class="input-group mb-3">
-            <div class="input-group-prepend" style="width: 86%">
-              <v-select :options="users" label="user_nm" multiple v-model="userSelected">
-                <template #option="option">
-                  <span>{{ option.noreg }}-{{ option.user_nm }}</span>
-                </template>
-                <template #selected-option="option">
-                  <span>{{ option.noreg }}-{{ option.user_nm }}</span>
-                </template>
-              </v-select>
+        <CCol lg="12" class="mb-3">
+          <CInputGroup>
+            <div class="input-group" style="width: 86%;">
+              <span class="input-group-text">PIC</span>
+              <div class="input-group-prepend" style="flex: 1;">
+                <v-select :options="users" label="user_nm" v-model="userSelected">
+                  <template #option="option">
+                    <span>{{ option.noreg }}-{{ option.user_nm }}</span>
+                  </template>
+                  <template #selected-option="option">
+                    <span>{{ option.noreg }}-{{ option.user_nm }}</span>
+                  </template>
+                </v-select>
+              </div>
             </div>
-            <div class="input-group-append" style="width: 14%">
-              <span class="input-group-text p-0">
-                <CButton color="primary" @click="assignPic()" :disabled="userSelected.length == 0">
-                  Assign
-                </CButton>
-              </span>
+            <CButton v-if="!loadingUpdatePic" color="primary" @click="assignPic()">Assign</CButton>
+            <div v-else class="d-flex align-items-center justify-content-center ms-2">
+              <CSpinner color="primary"/>
             </div>
-          </div>
+          </CInputGroup>
         </CCol>
-      </CRow>
-
-      <CRow>
-        <CCol lg="12">
-          <CInputGroup class="mb-3">
+        <CCol lg="12" class="mb-3">
+          <CInputGroup>
             <CInputGroupText as="label" for="PlanCheck">Plan Check</CInputGroupText>
             <CFormInput type="date" class="form-control w-50" v-model="changes_date" placeholder="Plan Check Date">
             </CFormInput>
@@ -58,15 +53,17 @@ import api from "@/apis/CommonAPI";
 import moment from "moment";
 import {mapGetters} from "vuex";
 import {getSchedule} from "../../views/tpm/TpmMonitoring.vue";
+import {toast} from "vue-sonner";
 
 export default {
   name: "ModalPic",
   data() {
     return {
       users: [],
-      is_show: false,
       userSelected: [],
       changes_date: null,
+      shouldReload: false,
+      loadingUpdatePic: false,
     };
   },
   watch: {
@@ -74,22 +71,22 @@ export default {
       if (this.incharge_id) this.getUsers(this.incharge_id);
     },
     isShow: function () {
-      this.is_show = this.isShow;
+      this.shouldReload = false; // reset state
       if (this.isShow && this.selectedPics && this.users) {
-        this.userSelected = [...this.users].filter((user) => {
-          const find = this.selectedPics.find((pic) => pic.user_id === user.user_id);
-          return !!find;
+        this.userSelected = [...this.users].find((user) => {
+          return this.selectedPics.user_id === user.user_id;
         });
+      } else {
+        this.userSelected = null;
       }
     },
-    getSubmitStatus: {
+    /*getSubmitStatus: {
       handler() {
         console.log(this.getSubmitStatus);
-        this.is_show = false;
         this.changesShow();
       },
       deep: true,
-    },
+    },*/
     getPlanCheckDt: function () {
       this.changes_date = this.getPlanCheckDt;
     },
@@ -114,26 +111,31 @@ export default {
       }
     },
     changesShow() {
-      this.userSelected = [];
-      if (this.is_show) {
-        this.is_show = false;
-        this.$emit("showChanges", this.is_show);
-      } else {
-        this.is_show = true;
-      }
+      this.userSelected = null;
+      this.$emit("showChanges", this.shouldReload);
     },
     async assignPic() {
       try {
-        let mapIdUsers = this.userSelected.map((user) => {
-          return user.user_id;
-        });
+        this.loadingUpdatePic = true;
+        if (!this.userSelected) {
+          toast.error("pic harus di isi terlebih dahulu");
+          return;
+        }
+
         const newObj = {
           schedule_id: this.schedule_id,
-          user_ids: mapIdUsers,
+          schedule_checker_id: this.schedule_checker_id,
+          //user_ids: this.userSelected.user_id,
+          user_id: this.userSelected.user_id,
         };
-        this.$store.dispatch("ADD_PIC_SCHEDULE", newObj);
+        await this.$store.dispatch("ADD_PIC_SCHEDULE", newObj);
+        this.shouldReload = true;
+        this.changesShow();
       } catch (error) {
-        console.log(error);
+        console.log('assignPic()', error);
+        toast.error("terjadi kesalahan saat menyimpan data, coba lagi");
+      } finally {
+        this.loadingUpdatePic = false;
       }
     },
 
@@ -144,9 +146,11 @@ export default {
           schedule_id: this.schedule_id,
         };
         this.$store.dispatch("UPDATE_PLAN_DATE", updatePlanDate);
-        // this.$emit('showChanges', this.is_show)
+        this.shouldReload = true;
+        this.changesShow();
       } catch (error) {
-        console.log(error);
+        console.log('updatePlanDate()', error);
+        toast.error("terjadi kesalahan");
       }
     },
     formatDate(dateString) {
@@ -175,7 +179,13 @@ export default {
     schedule_id: String,
     machine_nm: String,
     plan_check_dt: String,
+    schedule_checker_id: String,
     selectedPics: Array,
   },
 };
 </script>
+<style>
+.vs__dropdown-toggle {
+  margin-bottom: 0 !important;
+}
+</style>

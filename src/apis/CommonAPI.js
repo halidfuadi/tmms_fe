@@ -49,7 +49,7 @@ export default {
     return request;
   },
 
-  async get(url, params = "", callback) {
+  async get(url, params = "", callback, defaultGet = true) {
     // process.env.VUE_APP_STANDALONE_SINGLE_SPA == 'true' ?
     //     localStorage.setItem('id_token', process.env.VUE_APP_TKN)
     //     : console.log('STANDALONE_SINGLE_SPA FALSE')
@@ -60,10 +60,10 @@ export default {
       },
     };
 
-    let detailUrl = url;
+    let detailUrl =  process.env.VUE_APP_API_URL + url;
     if (params == "?") {
       detailUrl = process.env.VUE_APP_API_URL + `${url}`;
-    } else {
+    } else if (defaultGet) {
       detailUrl = process.env.VUE_APP_API_URL + `${url}/search${params}`;
     }
     console.log("DATA URL", detailUrl);

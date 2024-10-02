@@ -1,4 +1,4 @@
-import { toast } from "vue-sonner";
+import {toast} from "vue-sonner";
 import api from "@/apis/CommonAPI";
 
 export default {
@@ -23,21 +23,21 @@ export default {
     },
   },
   actions: {
-    async ADD_PIC_SCHEDULE({ commit }, payload) {
+    async ADD_PIC_SCHEDULE({commit}, payload) {
       try {
         console.log(payload);
-        const newObj = {
-          schedule_id: payload.schedule_id,
-          user_ids: payload.user_ids,
-        };
-        let inserted = await api.post(`/tpm/schedules/add/pic`, newObj);
+        let inserted = await api.post(`/tpm/schedules/add/pic`, payload);
+        if (inserted?.status > 200) {
+          throw new Error(inserted?.data.message);
+        }
+
         commit("setSubmit", inserted);
         toast.success("Success to add pic");
       } catch (error) {
-        toast.error("Error to add pic");
+        throw error;
       }
     },
-    async UPDATE_PLAN_DATE({ commit }, payload) {
+    async UPDATE_PLAN_DATE({commit}, payload) {
       try {
         console.log(payload);
         const updatePlanDate = {
@@ -54,7 +54,7 @@ export default {
         toast.error("Error to update plan date");
       }
     },
-    async ACT_GET_SCHEDULE({ commit }, payload) {
+    async ACT_GET_SCHEDULE({commit}, payload) {
       try {
         let filter = Object.keys(payload)
           .map((key) => {
