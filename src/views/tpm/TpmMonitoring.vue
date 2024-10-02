@@ -1,21 +1,22 @@
 <template>
   <div>
-  <CContainer fluid>
-    <CRow>
-      <CCol :md="12">
-        <div class="container-fluid">
-          <Toaster position="top-center" closeButton />
-          <ModalPic :isShow="isShow" :incharge_id="incharge_id" :machine_nm="machine_nm" :plan_check_dt="plan_check_dt"
-            :schedule_id="schedule_id" @showChanges="showChanges(state)" />
-          <SearchBar @getSchedules="getSchedules" />
-          <DropBarDelay />
-          <StatusTpm :filter="filter" />
-          <CCard>
-            <CCardBody>
-              <CRow>
-                <CCol class="tableFixHead">
-                  <table class="table table-bordered table-striped">
-                    <thead>
+    <CContainer fluid>
+      <CRow>
+        <CCol :md="12">
+          <div class="container-fluid">
+            <Toaster position="top-center" closeButton/>
+            <ModalPic :isShow="isShow" :incharge_id="incharge_id" :machine_nm="machine_nm"
+                      :plan_check_dt="plan_check_dt"
+                      :schedule_id="schedule_id" @showChanges="showChanges(state)" :selected-pics="selectedPics"/>
+            <SearchBar @getSchedules="getSchedules"/>
+            <DropBarDelay/>
+            <StatusTpm :filter="filter"/>
+            <CCard>
+              <CCardBody>
+                <CRow>
+                  <CCol class="tableFixHead">
+                    <table class="table table-bordered table-striped">
+                      <thead>
                       <tr>
                         <th rowspan="2">No</th>
                         <th class="w100-line text-center" rowspan="2" style="font-size: 15px">
@@ -48,9 +49,20 @@
                           {{ i }}
                         </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      <template v-if="Object.keys(schedules).length > 0">
+                      </thead>
+                      <tbody>
+                      <tr v-if="loading">
+                        <th class="text-center" colspan="37">
+                          <CSpinner
+                            component="span"
+                            size="sm"
+                            variant="grow"
+                            aria-hidden="true"
+                          />
+                          Loading...
+                        </th>
+                      </tr>
+                      <template v-else-if="schedules && Object.keys(schedules).length > 0">
                         <tr v-for="(schedule, key, ipar) in schedules" :key="key">
                           <td>{{ ipar + 1 }}</td>
                           <td>{{ schedule[0].line_nm }}</td>
@@ -113,35 +125,58 @@
                           </td>
                         </tr>
                       </template>
-                    </tbody>
-                  </table>
-                </CCol>
-              </CRow>
-            </CCardBody>
+                      </tbody>
+                    </table>
+                  </CCol>
+                </CRow>
+              </CCardBody>
 
-            <CCardFooter>
-              <div class="pagination">
-                <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
-                <span>Page {{ currentPage }} of {{ totalPages }}</span>
-                <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
-              </div>
-            </CCardFooter>
-          </CCard>
-        </div>
-      </CCol>
-    </CRow>
-  </CContainer>
-</div>
+              <CCardFooter>
+                <!--                <div class="pagination">
+                                  <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
+                                  <span>Page {{ currentPage }} of {{ totalPages }}</span>
+                                  <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
+                                </div>-->
+                <div class="card-footer">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <div class="input-group mb-3">
+                        <label class="input-group-text">Limit</label>
+                        <select class="form-select" v-model="limit"
+                                @change="handleLimitChange($event)">
+                          <option selected value="10">10</option>
+                          <option value="20">20</option>
+                          <option value="40">40</option>
+                          <option value="60">60</option>
+                          <option value="100">100</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <CustPagination :totalItems="totalPages" :items-per-page="10"
+                                      :current-page="currentPage"
+                                      @page-changed="handlePageChange($event)"/>
+                    </div>
+                  </div>
+                </div>
+              </CCardFooter>
+            </CCard>
+          </div>
+        </CCol>
+      </CRow>
+    </CContainer>
+  </div>
 </template>
 
 <script>
 import api from "@/apis/CommonAPI";
-import { Toaster } from "vue-sonner";
+import {Toaster} from "vue-sonner";
 import ModalPic from "@/components/Tpm/ModalPic";
 import SearchBar from "@/components/Tpm/SearchBar";
 import StatusTpm from "../../views/charts/StatusTpm.vue";
 import DropBarDelay from "../../components/Tpm/DropBarDelay.vue";
-import { CButton } from "@coreui/vue";
+import {CButton} from "@coreui/vue";
+import CustPagination from "@/components/Tpm/CustPagination.vue";
 
 export default {
   name: "TpmMonitoring",
@@ -173,26 +208,29 @@ export default {
         "November",
         "December",
       ],
+      selectedPics: null,
+      loading: false,
     };
   },
 
-  computed: {
-
-  },
+  computed: {},
 
   methods: {
     async getSchedules(filter) {
+      this.loading = true;
       try {
         let month = filter.split("=")[1].split("-")[1];
         let year = filter.split("=")[1].split("-")[0];
         this.generateDate(month, year);
         this.filter = filter;
         // Fetch schedules with pagination
-        let response = await api.get(`/tpm/schedules`, `?${filter}`);
-        this.schedules = response.data.schedules;
-        this.totalPages = Math.ceil(response.data.total / this.limit); // Calculate total pages
+        let {data: {data: response}} = await api.get(`/tpm/schedules`, `?${filter}`);
+        this.schedules = response.schedules;
+        this.totalPages = Math.ceil(response.total / this.limit); // Calculate total pages
       } catch (error) {
         console.log(error);
+      } finally{
+        this.loading = false;
       }
     },
 
@@ -218,6 +256,7 @@ export default {
       this.schedule_id = schedule.schedule_id;
       this.plan_check_dt = schedule.plan_check_dt;
       this.getSchedules(this.filter);
+      this.selectedPics = schedule.checkers;
     },
 
     prevPage() {
@@ -236,8 +275,16 @@ export default {
     executionPage(schedule) {
       this.$router.push(`monitoring/${schedule.schedule_id}`);
     },
+    async handleLimitChange(event) {
+      this.limit = event.target.value;
+    },
+
+    async handlePageChange(event) {
+      this.currentPage = event;
+    }
   },
   components: {
+    CustPagination,
     SearchBar,
     StatusTpm,
     ModalPic,

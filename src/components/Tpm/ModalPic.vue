@@ -56,8 +56,8 @@
 <script>
 import api from "@/apis/CommonAPI";
 import moment from "moment";
-import { mapGetters } from "vuex";
-import { getSchedule } from "../../views/tpm/TpmMonitoring.vue";
+import {mapGetters} from "vuex";
+import {getSchedule} from "../../views/tpm/TpmMonitoring.vue";
 
 export default {
   name: "ModalPic",
@@ -75,6 +75,12 @@ export default {
     },
     isShow: function () {
       this.is_show = this.isShow;
+      if (this.isShow && this.selectedPics && this.users) {
+        this.userSelected = [...this.users].filter((user) => {
+          const find = this.selectedPics.find((pic) => pic.user_id === user.user_id);
+          return !!find;
+        });
+      }
     },
     getSubmitStatus: {
       handler() {
@@ -97,11 +103,11 @@ export default {
   methods: {
     async getUsers(incharge_id = null) {
       try {
-        let { data } = await api.get(
+        let {data} = await api.get(
           `/tpm/users`,
           `?incharge_id=${incharge_id}`
         );
-        console.log(data);
+        console.log('userdata', data);
         this.users = data.data;
       } catch (error) {
         console.log(error);
@@ -169,6 +175,7 @@ export default {
     schedule_id: String,
     machine_nm: String,
     plan_check_dt: String,
+    selectedPics: Array,
   },
 };
 </script>
