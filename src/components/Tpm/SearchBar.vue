@@ -7,38 +7,41 @@
         <CCol lg="3">
           <CInputGroup class="mb-3">
             <CInputGroupText as="label" for="MonthSelect">Month</CInputGroupText>
-            <CFormInput v-model="form.month" type="month" class="form-control" placeholder="Month" />
+            <CFormInput v-model="form.month" type="month" class="form-control" placeholder="Month"/>
           </CInputGroup>
         </CCol>
         <CCol lg="5">
           <CInputGroup class="mb-3">
             <CInputGroupText as="label" for="PlantSelect">Plant</CInputGroupText>
-            <CFormInput v-model="form.plant_id" type="text" class="form-control" placeholder="Plant" disabled value="Engine Production Karawang#3 Division (EPKD)" />
+            <CFormInput v-model="form.plant_id" type="text" class="form-control" placeholder="Plant" disabled
+                        value="Engine Production Karawang#3 Division (EPKD)"/>
           </CInputGroup>
         </CCol>
         <CCol lg="4">
           <CInputGroup class="mb-3">
             <CInputGroupText as="label" for="ShopSelect">Shop</CInputGroupText>
-            <CFormInput v-model="form.shop_id" type="text" class="form-control" placeholder="Shop" disabled value="All" />
+            <CFormInput v-model="form.shop_id" type="text" class="form-control" placeholder="Shop" disabled
+                        value="All"/>
           </CInputGroup>
         </CCol>
       </CRow>
 
       <CRow class="mb-3">
         <CCol lg="3">
-          <Treeselect v-model="form.line_id" :options="line" placeholder="Select Line" />
+          <Treeselect v-model="form.line_id" :options="line" placeholder="Select Line"/>
         </CCol>
 
         <CCol lg="3">
-          <Treeselect v-model="form.machine_id" :options="machine" placeholder="Select Machine" />
+          <Treeselect v-model="form.machine_id" :options="machine" placeholder="Select Machine"/>
         </CCol>
 
         <CCol lg="3">
-          <Treeselect v-model="form.incharge_id" :options="incharge" placeholder="Select Incharge" />
+          <Treeselect v-model="form.incharge_id" :options="incharge" placeholder="Select Incharge"/>
         </CCol>
 
         <CCol lg="3">
-          <v-select append-to-body style="z-index: 1" :options="status" placeholder="Status" :reduce="status => status.status_id" v-model="form.status_id">
+          <v-select append-to-body style="z-index: 1" :options="status" placeholder="Status"
+                    :reduce="status => status.status_id" v-model="form.status_id">
             <template #option="option">
               <CBadge class="text-dark" :style="`background-color: ${option.color_tag}`" shape="pill">
                 {{ option.status_nm }}
@@ -54,7 +57,7 @@
       </CRow>
       <CRow>
         <CCol lg="12">
-          <CButton class="w-100" color="outline-dark" @click="search">
+          <CButton class="w-100" color="outline-dark" @click="search(true)">
             Search
           </CButton>
         </CCol>
@@ -69,9 +72,10 @@ import moment from "moment";
 import api from "@/apis/CommonAPI";
 
 // import the component
-import Treeselect from "vue3-treeselect";
+import Treeselect from "@zanmato/vue3-treeselect";
+import "@zanmato/vue3-treeselect/dist/vue3-treeselect.min.css";
 // import the styles
-import "vue3-treeselect/dist/vue3-treeselect.css";
+//import "vue3-treeselect/dist/vue3-treeselect.css";
 
 export default {
   name: "SearchBar",
@@ -91,12 +95,8 @@ export default {
       line: [],
     };
   },
-  components: { Treeselect },
+  components: {Treeselect},
   watch: {
-    form: {
-      handler: "saveFormToLocalStorage",
-      deep: true,
-    },
     getSubmitStatus: function () {
       if (this.getSubmitStatus) {
         this.search();
@@ -123,18 +123,18 @@ export default {
     },
     "form.line_id": function (newVal) {
       if (newVal && newVal.length > 0) {
-        this.getMachine({ line_id: newVal });
+        this.getMachine({line_id: newVal});
       } else {
         this.getMachine();
       }
     },
   },
   methods: {
-    search() {
-      let mapForm = Object.keys(this.form)
-        .map((key) => `${key}=${this.form[key]}`)
-        .join("&");
-      this.$emit("getSchedules", mapForm);
+    search(shouldSave = false) {
+      if (shouldSave) {
+        this.saveFormToLocalStorage();
+      }
+      this.$emit("onSubmitSearch", this.form);
     },
     async getStatus() {
       try {
@@ -154,7 +154,7 @@ export default {
             label: item.incharge_nm,
           };
         });
-        this.incharge = mapincharges;
+        this.incharge = [{id: "null", label: "All"}].concat(mapincharges);
       } catch (error) {
         console.log(error);
       }
@@ -169,7 +169,7 @@ export default {
             label: item.machine_nm,
           };
         });
-        let allMachine = [{ id: "null", label: "All" }];
+        let allMachine = [{id: "null", label: "All"}];
         mapMachines = allMachine.concat(mapMachines);
         this.machine = mapMachines;
       } catch (error) {
@@ -186,30 +186,30 @@ export default {
             label: item.line_nm,
           };
         });
-        let allLines = [{ id: "null", label: "All" }];
-        maplines = allLines.concat(maplines);
-        console.log(maplines);
-        this.line = maplines;
+
+        this.line = [{id: "null", label: "All"}].concat(maplines);
       } catch (error) {
         console.log(error);
       }
     },
     saveFormToLocalStorage() {
-      localStorage.setItem("searchForm", JSON.stringify(this.form));
+      console.log('form', this.form);
+      localStorage.setItem("searchFormSchedule", JSON.stringify(this.form));
     },
     loadFormFromLocalStorage() {
-      const savedForm = localStorage.getItem("searchForm");
+      const savedForm = localStorage.getItem("searchFormSchedule");
       if (savedForm) {
         this.form = JSON.parse(savedForm);
       }
     },
   },
-  mounted() {
+  async mounted() {
     this.loadFormFromLocalStorage();
-    this.getIncharge();
-    this.getStatus();
-    this.getMachine();
-    this.getLine();
+    await this.getLine();
+    await this.getMachine();
+    await this.getIncharge();
+    await this.getStatus();
+    this.loadFormFromLocalStorage();
     this.search();
   },
 };

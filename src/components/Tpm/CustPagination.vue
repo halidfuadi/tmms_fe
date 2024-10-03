@@ -60,20 +60,44 @@ export default {
       {
         range = this.range(1, this.limitButton + 1);
 
-        return (this.currentPage + range.length) <= this.totalPages ? range.concat(last) : range;
+        //return (this.currentPage + range.length) <= this.totalPages ? range.concat(last) : range;
+        return (this.limitButton < this.totalPages) ? range.concat(last) : range;
       }
       else if (this.currentPage > (this.totalPages - this.limitButton))
       {
-        range = this.range(this.totalPages - (this.limitButton), this.totalPages);
+        /*range = this.range(this.totalPages - (this.limitButton), this.totalPages);
 
-        return (this.currentPage - range.length) >= 1 ? first.concat(range) : range;
+        return (this.currentPage - range.length) >= 1 ? first.concat(range) : range;*/
+
+        range = this.range(this.totalPages - this.limitButton + 1, this.totalPages + 1);
+
+        // Tambahkan titik pertama jika diperlukan
+        return first.concat(range);
       }
       else
       {
-        range = this.range(
+        /*range = this.range(
           this.currentPage - Math.ceil(this.limitButton / 2),
           this.currentPage + Math.ceil(this.limitButton / 2)
         );
+
+        return first.concat(range).concat(last);*/
+        // Perbaikan logika untuk memastikan ada keseimbangan di sekitar currentPage
+        let half = Math.floor(this.limitButton / 2);
+        let start = this.currentPage - half;
+        let end = this.currentPage + half;
+
+        // Koreksi jika di dekat batas awal atau akhir
+        if (start < 1) {
+          start = 1;
+          end = this.limitButton;
+        }
+        if (end > this.totalPages) {
+          end = this.totalPages;
+          start = this.totalPages - this.limitButton + 1;
+        }
+
+        range = this.range(start, end + 1);
 
         return first.concat(range).concat(last);
       }

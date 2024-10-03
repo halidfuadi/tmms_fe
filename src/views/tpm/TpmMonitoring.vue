@@ -11,7 +11,7 @@
                       :selected-pics="selectedPics"
                       :schedule_checker_id="schedule_checker_id"
                       @showChanges="showChanges($event)"/>
-            <SearchBar @getSchedules="getSchedules"/>
+            <SearchBar @onSubmitSearch="getSchedules($event)"/>
             <DropBarDelay/>
             <StatusTpm :filter="filter"/>
             <CCard>
@@ -80,12 +80,12 @@
 
                           </td>
                           <td v-if="schedule.checkers" class="sticky-pic">
-                            <CButton color="success" size="sm" @click="confirmShow(schedule)" style="z-index: 1">
+                            <CButton color="success" size="sm" @click="confirmShow(schedule)" :style="`z-index: 1;`" class="text-white">
                               {{ schedule.checkers.user_nm }}
                             </CButton>
                           </td>
                           <td v-else class="sticky-pic">
-                            <CButton class="btn btn-sm w-100" color="info" @click="confirmShow(schedule)">ASSIGN
+                            <CButton class="btn btn-sm w-100 text-white" color="info" @click="confirmShow(schedule)">ASSIGN
                             </CButton>
                           </td>
                           <template v-for="date in dates" :key="date">
@@ -120,11 +120,6 @@
               </CCardBody>
 
               <CCardFooter>
-                <!--                <div class="pagination">
-                                  <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
-                                  <span>Page {{ currentPage }} of {{ totalPages }}</span>
-                                  <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
-                                </div>-->
                 <div class="card-footer">
                   <div class="d-flex justify-content-between">
                     <div>
@@ -141,7 +136,7 @@
                       </div>
                     </div>
                     <div>
-                      <CustPagination :totalItems="totalPages" :items-per-page="10"
+                      <CustPagination :totalItems="totalData" :items-per-page="limit"
                                       :current-page="currentPage"
                                       @page-changed="handlePageChange($event)"/>
                     </div>
@@ -181,7 +176,7 @@ export default {
       year: null,
       month: null,
       currentPage: 1, // Current page
-      totalPages: 0, // Total pages, calculated dynamically
+      totalData: 0,
       limit: 10, // Items per page
       months: [
         "January",
@@ -202,21 +197,38 @@ export default {
       schedule_checker_id: null,
     };
   },
-
-  computed: {},
-
+  async mounted() {
+    //await this.getSchedules();
+  },
+  watch: {
+    onSubmitSearch(newVal, oldVal){
+      console.log('newVal', newVal);
+    }
+  },
   methods: {
-    async getSchedules(filter) {
+    async getSchedules(filter = null) {
+      console.log('filter getSchedules', filter)
       this.loading = true;
       try {
-        let month = filter.split("=")[1].split("-")[1];
-        let year = filter.split("=")[1].split("-")[0];
-        this.generateDate(month, year);
-        this.filter = filter;
+        if (!filter) {
+          filter = this.filter;
+        } else {
+          this.filter = filter;
+        }
+
+        this.filter = {
+          ...this.filter,
+          page: this.currentPage,
+          limit: this.limit,
+        };
+
+        const monthYear = this.filter.month.split('-');
+        this.generateDate(monthYear[0], monthYear[1]);
         // Fetch schedules with pagination
-        let {data: {data: response}} = await api.get(`/tpm/schedules`, `?${filter}`);
+        const query = new URLSearchParams(this.filter);
+        let {data: {data: response}} = await api.get(`/tpm/schedules`, `?${query.toString()}`);
         this.schedules = response.schedules;
-        this.totalPages = Math.ceil(response.total / this.limit); // Calculate total pages
+        this.totalData = response.total;
       } catch (error) {
         console.log(error);
       } finally {
@@ -237,7 +249,7 @@ export default {
       this.isShow = false;
       //determine schedule should refetch from changes Modal
       if (state) {
-        this.getSchedules(this.filter);
+        this.getSchedules();
       }
     },
 
@@ -250,32 +262,33 @@ export default {
       this.plan_check_dt = schedule.plan_check_dt;
       this.schedule_checker_id = schedule.schedule_checker_id;
       this.selectedPics = schedule.checkers;
-      //this.getSchedules(this.filter);
     },
-
-    prevPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        this.getSchedules(this.filter);
-      }
-    },
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-        this.getSchedules(this.filter);
-      }
-    },
-
     executionPage(schedule) {
       this.$router.push(`monitoring/${schedule.schedule_id}`);
     },
-    async handleLimitChange(event) {
+    handleLimitChange(event) {
       this.limit = event.target.value;
+      this.getSchedules();
     },
-
-    async handlePageChange(event) {
+    handlePageChange(event) {
       this.currentPage = event;
+      this.getSchedules();
     },
+    colorIsDarkAdvanced(bgColor) {
+      let color = (bgColor.charAt(0) === '#') ? bgColor.substring(1, 7) : bgColor;
+      let r = parseInt(color.substring(0, 2), 16); // hexToR
+      let g = parseInt(color.substring(2, 4), 16); // hexToG
+      let b = parseInt(color.substring(4, 6), 16); // hexToB
+      let uicolors = [r / 255, g / 255, b / 255];
+      let c = uicolors.map((col) => {
+        if (col <= 0.03928) {
+          return col / 12.92;
+        }
+        return Math.pow((col + 0.055) / 1.055, 2.4);
+      });
+      let L = (0.2126 * c[0]) + (0.7152 * c[1]) + (0.0722 * c[2]);
+      return L <= 0.179 ? '#FFFFFF' : '#000000';
+    }
   },
   components: {
     ModalExecuteCounter,
@@ -285,11 +298,6 @@ export default {
     ModalPic,
     Toaster,
     DropBarDelay,
-  },
-  watch: {
-    getSchedules() {
-      this.getSchedules(this.filter);
-    },
   },
 };
 </script>

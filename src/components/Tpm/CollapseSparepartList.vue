@@ -89,7 +89,7 @@ export default {
 
   props: {
     visibleSparepart: Boolean,
-    ledger_itemcheck_id: Number,
+    ledger_itemcheck_id: [String, Number],
     is_execute: Boolean,
   },
 
