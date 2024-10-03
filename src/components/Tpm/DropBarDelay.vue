@@ -48,7 +48,7 @@
     <CAccordionItem class="mb-1">
       <CAccordionHeader>
         LAST MONTH DELAYED ITEM
-        <CBadge position="top-end" color="danger" class="ms-2">{{ total_delays }}</CBadge>
+        <CBadge position="top-end" color="danger" class="ms-2" style="z-index: 99;">{{ total_delays }}</CBadge>
       </CAccordionHeader>
       <CAccordionBody class="mb-1">
         <CRow>

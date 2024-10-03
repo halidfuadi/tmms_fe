@@ -11,46 +11,75 @@
               {{ scheduleDetailData?.itemcheck_nm }}
             </CCardHeader>
             <CCardBody>
-              <CRow class="justify-content-around">
+              <div class="d-flex align-items-center justify-content-center w-100 mb-3">
+                <CRow class="justify-content-between w-100">
+                  <CCol class="d-flex gap-2">
+                    <CIcon icon="cil-building"/>
+                    <span style="white-space: pre-line;">
+                    {{ companyPlant }}
+                    </span>
+                  </CCol>
+                  <CCol class="d-flex align-items-center justify-content-center gap-2">
+                    <CIcon icon="cil-cash"/>
+                    {{ scheduleDetailData?.line_nm }}
+                  </CCol>
+                  <CCol class="d-flex align-items-center justify-content-center gap-2">
+                    <CIcon icon="cil-camera-roll"/>
+                    {{
+                      scheduleDetailData?.machine_nm
+                    }}
+                  </CCol>
+                  <CCol class="d-flex justify-content-end gap-2">
+                    <CIcon icon="cil-av-timer"/>
+                    {{ scheduleDetailData?.duration }} min
+                  </CCol>
+                </CRow>
+              </div>
+              <CRow>
                 <CCol>
-                  <CIcon icon="cil-building"/>
-                  Engine Production Karawang#3(temp)
+                  <CRow class="mb-2">
+                    <CCol>
+                      <CFormInput
+                        label="Method"
+                        disabled
+                        :value="scheduleDetailData?.method_check"/>
+                    </CCol>
+                    <CCol>
+                      <CFormInput
+                        label="MP"
+                        disabled
+                        :value="scheduleDetailData?.mp + ' Person'"/>
+                    </CCol>
+                  </CRow>
+                  <CFormInput
+                    label="Standard Measurement"
+                    disabled
+                    :value="scheduleDetailData?.standard_measurement"
+                    class="mb-2"/>
+                  <CFormInput
+                    label="Upper and Lower Limit"
+                    disabled
+                    :value="upperLower"/>
                 </CCol>
                 <CCol>
-                  <CIcon icon="cil-cash"/>
-                  {{ scheduleDetailData?.line_nm }}
-                </CCol>
-                <CCol>
-                  <CIcon icon="cil-camera-roll"/>
-                  {{
-                    scheduleDetailData?.machine_nm
-                  }}
-                </CCol>
-                <CCol>
-                  <CIcon icon="cil-av-timer"/>
-                  {{ scheduleDetailData?.duration }} min
+                  <CForm>
+                    <CFormTextarea
+                      label="Details"
+                      disabled
+                      rows="8"
+                      :value="(!scheduleDetailData?.details || scheduleDetailData?.details == 'null') ? 'No Data' : scheduleDetailData?.details"/>
+                  </CForm>
                 </CCol>
               </CRow>
             </CCardBody>
           </CCard>
-
-          <CCard class="mb-1">
-            <CAccordion>
-              <CAccordionItem>
-                <CAccordionHeader>Manual Books</CAccordionHeader>
-                <CAccordionBody>coming soon</CAccordionBody>
-              </CAccordionItem>
-            </CAccordion>
-          </CCard>
-
           <CCard class="mb-1" style="z-index: 3">
             <CCardBody>
               <CRow>
-                <CCol lg="6">
+                <CCol lg="6" class="mb-3">
                   <label>Plan PIC</label>
                   <CFormInput :value="scheduleDetailData?.checkers.user_nm" disabled/>
                 </CCol>
-
                 <CCol lg="6" v-if="GETTER_USERS">
                   <label>Actual PIC</label>
                   <v-select :options="GETTER_USERS" label="user_nm" v-model="form.actual_user_id"
@@ -95,7 +124,8 @@
                     <CFormInput type="number" v-model="form.checked_val"/>
                     <CInputGroupText>
                       <b>Std: {{ scheduleDetailData?.ng_val }} ~
-                        {{ scheduleDetailData?.ok_val }}</b>
+                        {{ scheduleDetailData?.ok_val }}
+                      </b>
                     </CInputGroupText>
                   </CInputGroup>
                 </CCol>
@@ -140,13 +170,14 @@
           <CCard style="z-index: 2">
             <CCardBody>
               <CRow class="justify-content-end">
-                <CCol lg="1">
+                <CCol md="6">
+                  <CButton color="info" @click="openManualBook" class="text-white">Manual Book</CButton>
+                </CCol>
+                <CCol md="6" class="d-flex justify-content-end gap-2">
                   <CButton v-if="!is_already_check" color="primary" @click="submitTpmExec()">Submit
                   </CButton>
                   <CButton v-else color="primary" disabled="true">Submitted</CButton>
-                </CCol>
-                <CCol lg="1">
-                  <CButton color="secondary" @click="$router.go(-1)">Cancel</CButton>
+                  <CButton color="secondary" @click="() => $router.go(-1)" class="text-white">Cancel</CButton>
                 </CCol>
               </CRow>
             </CCardBody>
@@ -165,6 +196,8 @@ import {toast, Toaster} from "vue-sonner";
 import {mapGetters} from "vuex";
 import ModalFinding from "@/components/Tpm/ModalFinding.vue";
 import CollapseSparepartList from "@/components/Tpm/CollapseSparepartList.vue";
+import PDFViewer from 'pdf-viewer-vue'
+
 
 export default {
   name: "TpmExecution",
@@ -205,6 +238,7 @@ export default {
     CollapseSparepartList,
     Toaster,
     ModalFinding,
+    PDFViewer
   },
   computed: {
     ...mapGetters(["GETTER_USERS"]),
@@ -227,6 +261,36 @@ export default {
         60
       );
     },
+    upperLower() {
+      if (!this.scheduleDetailData) {
+        return "No Data";
+      }
+
+      if (this.scheduleDetailData?.upper_limit && this.scheduleDetailData?.lower_limit) {
+        return this.scheduleDetailData?.upper_limit + ' ~ ' + this.scheduleDetailData?.lower_limit;
+      } else if (this.scheduleDetailData?.upper_limit) {
+        return this.scheduleDetailData?.upper_limit;
+      } else if (this.scheduleDetailData?.lower_limit) {
+        return this.scheduleDetailData?.lower_limit;
+      }
+
+      return "No Data";
+    },
+    companyPlant() {
+      if (!this.scheduleDetailData) {
+        return "No Data";
+      }
+
+      if (this.scheduleDetailData?.company_nm && this.scheduleDetailData?.plant_nm) {
+        return this.scheduleDetailData?.company_nm + ' \n ' + this.scheduleDetailData?.plant_nm;
+      } else if (this.scheduleDetailData?.company_nm) {
+        return this.scheduleDetailData?.company_nm;
+      } else if (this.scheduleDetailData?.plant_nm) {
+        return this.scheduleDetailData?.plant_nm;
+      }
+
+      return "Engine Production Karawang#3(temp)";
+    }
   },
   methods: {
     submitFinding(state) {
@@ -296,28 +360,32 @@ export default {
         };
 
         let {data: {data: response}} = await api.get(`/tpm/schedules/${this.$route.params.id}`, null, null, false);
-        this.scheduleDetailData = response;
-        this.form.actual_user_id = response.actualPic?.user_id ? response.actualPic.user_id : null;
+        if (response) {
+          this.getStd(response.itemcheck_std_id);
 
-        this.start_time = response.actual_check_dt
-          ? moment(response.actual_check_dt).format("hh:mm")
-          : moment().format("hh:mm");
+          this.scheduleDetailData = response;
+          this.form.actual_user_id = response.actualPic?.user_id ? response.actualPic.user_id : null;
 
-        this.form.ledger_itemcheck_id = response.ledger_itemcheck_id;
-        this.end_time = response.actual_check_dt ? moment(
-          response.actual_check_dt || new Date()
-        )
-          .add(response.duration, "minutes")
-          .format("hh:mm") : null;
-        this.form.plan_user_id = response.checkers.user_id;
-        this.plan_check_dt = response.plan_check_dt ? moment(
-          response.plan_check_dt
-        ).format("YYYY-MM-DD") : null;
+          this.start_time = response.actual_check_dt
+            ? moment(response.actual_check_dt).format("hh:mm")
+            : moment().format("hh:mm");
 
-        this.form.ok_val = response.ok_val;
-        this.form.ng_val = response.ng_val;
+          this.form.ledger_itemcheck_id = response.ledger_itemcheck_id;
+          this.end_time = response.actual_check_dt ? moment(
+            response.actual_check_dt || new Date()
+          )
+            .add(response.duration, "minutes")
+            .format("hh:mm") : null;
+          this.form.plan_user_id = response.checkers.user_id;
+          this.plan_check_dt = response.plan_check_dt ? moment(
+            response.plan_check_dt
+          ).format("YYYY-MM-DD") : null;
 
-        this.$refs.collapseSparepartList.getItems(response.ledger_itemcheck_id)
+          this.form.ok_val = response.ok_val;
+          this.form.ng_val = response.ng_val;
+
+          this.$refs.collapseSparepartList.getItems(response.ledger_itemcheck_id)
+        }
       } catch (error) {
         console.log(error);
         toast.error("failed fetch detail schedule");
@@ -351,11 +419,11 @@ export default {
         console.log(error);
       }
     },
-    async getStd() {
+    async getStd(itemcheck_std_id) {
       try {
         let {data} = await api.get(
           `/tpm/itemcheck-std`,
-          `?itemcheck_std_id=${response.itemcheck_std_id}`
+          `?itemcheck_std_id=${itemcheck_std_id}`
         );
         let stdData = data.data[0];
         console.log("stdData");
@@ -367,11 +435,15 @@ export default {
         console.log(error);
       }
     },
+    openManualBook() {
+      if (this.scheduleDetailData?.manual_book_file) {
+        window.open(this.scheduleDetailData?.manual_book_file, '_blank');
+      }
+    }
   },
-  async mounted() {
+  mounted() {
     this.form.schedule_id = this.$route.params.id;
     this.getDetail();
-    this.getStd();
     this.getUser();
     //await this.getHistoryExecution();
   },
@@ -379,8 +451,8 @@ export default {
 </script>
 
 <style>
-.form-control:disabled,
+/*.form-control:disabled,
 .form-select:disabled {
   border: 1px solid #00ff3b !important;
-}
+}*/
 </style>
