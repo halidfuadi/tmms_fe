@@ -14,6 +14,17 @@ export default {
     GETTER_USERS: (state) => {
       return state.users;
     },
+    GETTER_USERS_SEARCH_SELECT: (state) => {
+      if(!state.users){
+        return [];
+      }
+
+      return state.users.map((e) => ({
+        user_id: e.user_id,
+        user_nm: e.user_nm,
+        noreg: e.noreg,
+      }));
+    },
   },
   actions: {
     async ACT_GET_USERS({ commit }, payload = null) {

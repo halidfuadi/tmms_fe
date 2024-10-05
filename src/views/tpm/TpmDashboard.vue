@@ -128,6 +128,7 @@ import GraphTrendTPM from "../../views/charts/GraphTrendTPM.vue";
 
 // import NewUpdate from '../../components/Tpm/NewUpdate.vue'
 import { CCardBody, CCardHeader, CCardSubtitle, CCardTitle } from "@coreui/vue";
+import {GET_MACHINES} from "@/store/machines.module";
 
 export default {
   name: "TPMDashboard",
