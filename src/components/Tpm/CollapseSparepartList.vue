@@ -94,16 +94,16 @@ export default {
   },
 
   methods: {
-    async getItems(item) {
+    async getItems(item, isLedgerUuid = false) {
       this.items = [];
       try {
         let response
         console.log(item);
 
-        if(!/^\d+$/.test(item)){
+        if(!/^\d+$/.test(item) && !isLedgerUuid){
           response = await api.get('/tpm/spareparts/get-sparepart-itemcheck', `?uuid=${item}`);
         }else{
-          response = await api.get('/tpm/spareparts/get-sparepart-itemcheck', `?ledger_itemcheck_id=${item}`);
+          response = await api.get('/tpm/spareparts/get-sparepart-itemcheck', isLedgerUuid ? `?ledger_itemcheck_uuid=${item}`  : `?ledger_itemcheck_id=${item}`);
         }
         this.items = response.data.data;
         console.log(this.items);

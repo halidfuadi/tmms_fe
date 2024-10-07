@@ -4,8 +4,8 @@
       <CRow>
         <CCol :md="12">
           <Toaster position="top-center" closeButton/>
-          <ModalFinding :isShow="is_finding" :finding="form.finding" @submit="submitFinding"
-                        @closeModal="(state) => (is_finding = state)"/>
+          <ModalFinding :isShow="isShowModalFinding" :finding="form.finding" @submit="submitFinding"
+                        @closeModal="(state) => (isShowModalFinding = state)"/>
           <CCard class="mb-1">
             <CCardHeader>TPM Execution -
               {{ scheduleDetailData?.itemcheck_nm }}
@@ -35,7 +35,21 @@
                   </CCol>
                 </CRow>
               </div>
-              <CRow>
+              <CRow class="mb-2">
+                <CCol lg="6">
+                  <CFormInput
+                    label="Item Location"
+                    disabled
+                    :value="scheduleDetailData?.itemcheck_loc"/>
+                </CCol>
+                <CCol lg="6">
+                  <CFormInput
+                    label="Last Checked Date"
+                    disabled
+                    :value="scheduleDetailData?.last_checked_dt"/>
+                </CCol>
+              </CRow>
+              <CRow class="mb-2">
                 <CCol>
                   <CRow class="mb-2">
                     <CCol>
@@ -82,8 +96,7 @@
                 </CCol>
                 <CCol lg="6" v-if="GETTER_USERS">
                   <label>Actual PIC</label>
-                  <v-select :options="GETTER_USERS" label="user_nm" v-model="form.actual_user_id"
-                            :disabled="is_already_check">
+                  <v-select :options="GETTER_USERS" label="user_nm" v-model="form.actual_user_id">
                     <template #option="option">
                       <span>{{ option.noreg }}-{{ option.user_nm }}</span>
                     </template>
@@ -133,7 +146,7 @@
                 <CCol lg="3">
                   <CInputGroup class="mb-3">
                     <CInputGroupText>Plan Date</CInputGroupText>
-                    <CFormInput type="date" v-model="plan_check_dt" :disabled="is_already_check"/>
+                    <CFormInput type="date" v-model="plan_check_dt" disabled/>
                   </CInputGroup>
                 </CCol>
 
@@ -174,7 +187,7 @@
                   <CButton color="info" @click="openManualBook" class="text-white">Manual Book</CButton>
                 </CCol>
                 <CCol md="6" class="d-flex justify-content-end gap-2">
-                  <CButton v-if="!is_already_check" color="primary" @click="submitTpmExec()">Submit
+                  <CButton v-if="!is_already_check" color="primary" @click="save">Submit
                   </CButton>
                   <CButton v-else color="primary" disabled="true">Submitted</CButton>
                   <CButton color="secondary" @click="() => $router.go(-1)" class="text-white">Cancel</CButton>
@@ -223,6 +236,7 @@ export default {
           problem: null,
           action_plan: null,
           plan_check_dt: moment().format("YYYY-MM-DD"),
+          attachment: null
         },
       },
       plan_check_dt: null,
@@ -230,8 +244,8 @@ export default {
       end_time: moment().format("hh:mm"),
       users: [],
       is_finding: false,
-      submittedForm: null,
       scheduleDetailData: null,
+      isShowModalFinding: false,
     };
   },
   components: {
@@ -294,62 +308,81 @@ export default {
   },
   methods: {
     submitFinding(state) {
-      try {
-        const finding = state.finding;
-        if (!state.is_show && finding.user_id) {
-          // doing execution with finding
-          this.is_finding = state.is_show;
-          this.submittedForm.finding = finding;
-          this.$store.dispatch("ACT_EXECUTION_TPM", this.submittedForm);
-          this.$router.push("/tpm/monitoring");
-        }
-        this.is_finding = false;
-      } catch (error) {
-        toast.error("Error to submit finding");
+      this.form = {
+        ...this.form,
+        finding: state.finding,
+      };
+    },
+    save() {
+      if (!this.form.actual_user_id) {
+        toast.warning("Actual User harus di pilih terlebih dahulu", {
+          description: "Pilih Actual User untuk menyimpan aktivitas"
+        });
+        return;
       }
+
+      if (!this.form.checked_val) {
+        toast.warning("TPM Check harus di pilih terlebih dahulu", {
+          description: "Pilih TPM Check untuk menyimpan aktivitas"
+        });
+        return;
+      }
+
+      if (!this.plan_check_dt || !this.form.actual_check_dt || !this.start_time || !this.end_time) {
+        toast.warning("Lengkapi Waktu", {
+          description: "Lengkapi waktu untuk menyimpan aktivitas"
+        });
+        return;
+      }
+
+      const isRangedType =
+        this.is_number &&
+        (+this.form.checked_val < +this.form.ng_val ||
+          +this.form.checked_val > +this.form.ok_val);
+
+      this.is_finding = (!this.is_number && this.form.ng_val === this.form.checked_val) || isRangedType;
+      const validateFinding = Object.keys(this.form.finding).filter((key) => {
+        return !this.form.finding[key];
+      });
+
+      if (this.is_finding) {
+        if (validateFinding.length > 0) {
+          this.isShowModalFinding = true;
+          return;
+        }
+      }
+
+      this.submitTpmExec();
     },
     async submitTpmExec() {
-      console.log("SubmitExec");
       try {
-        this.form.actual_duration = this.getActualDuration;
-        this.submittedForm = {
+        const mappedForm = {
           ...this.form,
+          actual_duration: this.getActualDuration,
+          actual_check_dt: `${this.form.actual_check_dt} ${this.start_time}`,
+          actual_user_id: this.form.actual_user_id?.user_id,
+          ledger_itemcheck_id: this.scheduleDetailData.ledger_itemcheck_id,
         };
-        //this.submittedForm.actual_user_ids = this.getOnlyUserPlanIds;
-        this.submittedForm.actual_check_dt = `${this.form.actual_check_dt} ${this.start_time}`;
-        let isNotNull =
-          Object.entries(this.submittedForm).filter(([key, value]) => {
-            return !value && value != 0;
-          }).length === 0;
-        let isJudgType =
-          !this.is_number &&
-          this.submittedForm.ng_val === this.submittedForm.checked_val;
-        let isRangedType =
-          this.is_number &&
-          (+this.submittedForm.checked_val < +this.submittedForm.ng_val ||
-            +this.submittedForm.checked_val > +this.submittedForm.ok_val);
-        console.log(
-          +this.submittedForm.ng_val < +this.submittedForm.checked_val ||
-          +this.submittedForm.ok_val > +this.submittedForm.checked_val
-        );
-        console.log(isNotNull, isJudgType, isRangedType);
-        console.log(this.submittedForm);
-        if (isNotNull && isJudgType) {
-          this.is_finding = true;
-          return;
-        } else if (isNotNull && isRangedType) {
-          this.is_finding = true;
-          return;
+
+        delete mappedForm.finding;
+
+        const formData = new FormData();
+        formData.append('finding_image', this.form.finding.attachment);
+        formData.append('finding', JSON.stringify(this.form.finding));
+        for (let key in mappedForm) {
+          formData.append(key, mappedForm[key]);
         }
-        if (isNotNull) {
-          console.log(this.submittedForm);
-          await this.$store.dispatch("ACT_EXECUTION_TPM", this.submittedForm);
-          this.$router.push("/tpm/monitoring");
+
+        const uploadDest = this.form.finding.attachment ? `?dest=${'finding/' + this.scheduleDetailData.ledger_itemcheck_id}` : '';
+        let data = await api.post(`/tpm/execution/add${uploadDest}`, formData);
+        if (data.status === 200) {
+          toast.success("Aktivitas berhasil di simpan")
+          location.reload();
         } else {
-          toast.error("Lengkapi input dulu!");
+          toast.success("Gagal menyimpan aktivitas. Error : " + data.response.data.message);
         }
       } catch (error) {
-        toast.error("Error to execution");
+        toast.error("Gagal saat menyimpan aktivitas, Detail : " + error);
       }
     },
     async getDetail() {
@@ -364,7 +397,16 @@ export default {
           this.getStd(response.itemcheck_std_id);
 
           this.scheduleDetailData = response;
-          this.form.actual_user_id = response.actualPic?.user_id ? response.actualPic.user_id : null;
+
+          this.form = {
+            ...this.form,
+            actual_user_id: response.actualPic ? {
+              user_id: response.actualPic.user_id,
+              user_nm: response.actualPic.user_nm,
+              noreg: response.actualPic.noreg,
+            } : null,
+            checked_val: response.checked_val,
+          }
 
           this.start_time = response.actual_check_dt
             ? moment(response.actual_check_dt).format("hh:mm")
@@ -384,7 +426,7 @@ export default {
           this.form.ok_val = response.ok_val;
           this.form.ng_val = response.ng_val;
 
-          this.$refs.collapseSparepartList.getItems(response.ledger_itemcheck_id)
+          this.$refs.collapseSparepartList.getItems(response.ledger_itemcheck_id, true);
         }
       } catch (error) {
         console.log(error);
