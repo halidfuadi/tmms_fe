@@ -377,7 +377,7 @@ export default {
         let data = await api.post(`/tpm/execution/add${uploadDest}`, formData);
         if (data.status === 200) {
           toast.success("Aktivitas berhasil di simpan")
-          location.reload();
+          this.$router.go(-1);
         } else {
           toast.success("Gagal menyimpan aktivitas. Error : " + data.response.data.message);
         }
