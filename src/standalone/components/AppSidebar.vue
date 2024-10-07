@@ -127,32 +127,40 @@ export default {
         },
         {
           component: 'CNavItem',
-          to: '/tpm/ledger',
-          name: 'TPM Ledger',
-          icon: 'cilTask',
-          parentId: 'ROOT',
-        },
-        {
-          component: 'CNavItem',
-          to: '/tpm/ledgerNew',
-          name: 'TPM Ledger New',
-          icon: 'cilTask',
-          parentId: 'ROOT',
-        },
-        {
-          component: 'CNavItem',
-          to: '/tpm/sparepart',
-          name: 'TPM Sparepart',
-          icon: 'cilFactory',
-          parentId: 'ROOT',
-        },
-        {
-          component: 'CNavItem',
           to: '/tpm/history',
           name: 'TPM History',
           icon: 'cilHistory',
           parentId: 'ROOT',
         },
+        {
+          component: 'CNavItem',
+          name: 'Master',
+          icon: 'cilNotes',
+          parentId: 'MST',
+          items: [
+            {
+              component: 'CNavItem',
+              to: '/tpm/ledger',
+              name: 'TPM Ledger',
+              icon: 'cilTask',
+              parentId: 'MST',
+            },
+            {
+              component: 'CNavItem',
+              to: '/tpm/ledgerNew',
+              name: 'TPM Ledger New',
+              icon: 'cilTask',
+              parentId: 'ROOT',
+            },
+            {
+              component: 'CNavItem',
+              to: '/tpm/sparepart',
+              name: 'TPM Sparepart',
+              icon: 'cilFactory',
+              parentId: 'ROOT',
+            },
+          ],
+        }
       ],
     }
   },

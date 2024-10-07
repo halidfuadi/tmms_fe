@@ -1,28 +1,28 @@
 <template>
   <div>
-  <CContainer fluid>
-    <CRow>
-      <CCol lg="12">
-        <Toaster position="top-center" closeButton />
-        <CCard class="mb-3 p-2">
-          <CRow>
-            <CCol lg="4">
-              <SearchBarLedger @getLedgers="getLedgers" @changeView="handleChangeView" />
-              <AddLedger />
-            </CCol>
-            <CCol lg="8">
-              <NewUpdate ref="NewUpdated" />
-            </CCol>
-          </CRow>
-        </CCard>
-        <ModalItemcheck :isShow="isShow" :ledger_id="ledger_id" :machine_nm="machine_nm"
-          @showChanges="showChanges(state)" />
-        <CCard class="mb-5">
-          <CCardBody>
+    <CContainer fluid>
+      <CRow>
+        <CCol lg="12">
+          <Toaster position="top-center" closeButton/>
+          <CCard class="mb-3 p-2">
             <CRow>
-              <CCol class="overflow-auto tableFixHead" lg="12">
-                <table v-if="currentView === 'machineAndLine'" class="table table-bordered table-striped">
-                  <thead>
+              <CCol lg="4">
+                <SearchBarLedger @getLedgers="getLedgers" @changeView="handleChangeView"/>
+                <AddLedger/>
+              </CCol>
+              <CCol lg="8">
+                <NewUpdate ref="NewUpdated"/>
+              </CCol>
+            </CRow>
+          </CCard>
+          <ModalItemcheck :isShow="isShow" :ledger_id="ledger_id" :machine_nm="machine_nm"
+                          @showChanges="showChanges(state)"/>
+          <CCard class="mb-5">
+            <CCardBody>
+              <CRow>
+                <CCol class="overflow-auto tableFixHead" lg="12">
+                  <table v-if="currentView === 'machineAndLine'" class="table table-bordered table-striped">
+                    <thead>
                     <tr>
                       <th class="text-center">No</th>
                       <th class="text-center">Line</th>
@@ -30,114 +30,137 @@
                       <th class="text-center">Total Itemcheck</th>
                       <th class="text-center">Actions</th>
                     </tr>
-                  </thead>
-                  <tbody v-if="paginatedLedgers.length > 0 && !isLoading">
-                    <tr v-for="(ledger, i) in paginatedLedgers" :key="i">
+                    </thead>
+                    <tbody v-if="ledgers?.length > 0 && !isLoading">
+                    <tr v-for="(ledger, i) in ledgers" :key="i">
                       <td class="text-center">
-                        {{ (currentPage - 1) * rowsPerPage + i + 1 }}
+                        {{ ledger?.no }}
                       </td>
                       <td class="text-center">{{ ledger?.line_nm }}</td>
                       <td class="text-center">{{ ledger?.machine_nm }}</td>
                       <td class="text-center">
                         <CBadge class="text-light bg-dark" shape="pill">{{
-                ledger?.num_item_checks
-              }}</CBadge>
+                            ledger?.num_item_checks
+                          }}
+                        </CBadge>
                       </td>
                       <td class="align-center">
                         <div class="d-flex justify-content-center">
-                          <CButton class="btn btn-sm col me-3" color="success" @click="showDetail(ledger)"
-                            style="max-width: 100px">
-                            ITEMCHECKS
+                          <CButton class="btn btn-sm col me-3 text-white" color="success" @click="showDetail(ledger)"
+                                   style="max-width: 100px">
+                            Item Check
                           </CButton>
-                          <CButton class="btn btn-sm col" color="danger" style="max-width: 100px">
-                            DELETE
+                          <CButton class="btn btn-sm col text-white" color="danger" style="max-width: 100px">
+                            Delete
                           </CButton>
                         </div>
                       </td>
                     </tr>
-                  </tbody>
-                  <tbody v-else-if="isLoading">
+                    </tbody>
+                    <tbody v-else-if="isLoading">
                     <tr>
                       <th class="text-center" colspan="5">
-                        <CSpinner component="span" size="sm" variant="grow" aria-hidden="true" />
+                        <CSpinner component="span" size="sm" variant="grow" aria-hidden="true"/>
                         Loading...
                       </th>
                     </tr>
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
 
-                <table v-else class="table table-bordered table-striped">
-                  <thead>
+                  <table v-else class="table table-bordered table-striped">
+                    <thead>
                     <tr>
                       <th class="text-center">No</th>
-                      <th class="text-center">Total Machine</th>
+                      <th class="text-center">Method</th>
                       <th class="text-center">Itemcheck Name</th>
-                      <th class="text-center" colspan="2">Periods</th>
+                      <th class="text-center">Total Machines</th>
                       <th class="text-center">Actions</th>
                     </tr>
-                  </thead>
-                  <tbody v-if="paginatedItems.length > 0 && !isLoading">
-                    <tr v-for="(ledger, i) in paginatedItems" :key="i">
+                    </thead>
+                    <tbody v-if="items && items.length > 0 && !isLoading">
+                    <tr v-for="(item, i) in items" :key="i">
                       <td class="text-center">
-                        {{ (currentPage - 1) * rowsPerPage + i + 1 }}
+                        {{ item?.no }}
                       </td>
-                      <td class="text-center">{{ ledger?.machine_nm }}</td>
-                      <td class="text-center">{{ ledger?.itemcheck_nm }}</td>
-                      <td class="text-center">{{ ledger?.val_periodic }}</td>
-                      <td class="text-center">{{ ledger?.period_nm }}</td>
+                      <td class="text-center">{{ item?.method_check }}</td>
+                      <td class="text-center">{{ item?.itemcheck_nm }}</td>
+                      <td class="text-center">
+                        <CBadge class="text-light bg-dark" shape="pill">{{
+                            item?.total_machines
+                          }}
+                        </CBadge>
+                      </td>
                       <td class="align-center">
                         <div class="d-flex justify-content-center">
-                          <CButton class="btn btn-sm col me-3" color="success" @click="showDetail(ledger)"
-                            style="max-width: 100px">
-                            ITEMCHECKS
+                          <CButton class="btn btn-sm col me-3 text-white" color="success"
+                                   @click="showItemCheckDetail(item)"
+                                   style="max-width: 100px">
+                            Detail
                           </CButton>
-                          <CButton class="btn btn-sm col" color="danger" style="max-width: 100px">
-                            DELETE
+                          <CButton class="btn btn-sm col text-white" color="danger" style="max-width: 100px">
+                            Delete
                           </CButton>
                         </div>
                       </td>
                     </tr>
-                  </tbody>
-                  <tbody v-else-if="isLoading">
+                    </tbody>
+                    <tbody v-else-if="isLoading">
                     <tr>
                       <th class="text-center" colspan="5">
-                        <CSpinner component="span" size="sm" variant="grow" aria-hidden="true" />
+                        <CSpinner component="span" size="sm" variant="grow" aria-hidden="true"/>
                         Loading...
                       </th>
                     </tr>
-                  </tbody>
-                </table>
-              </CCol>
-            </CRow>
-          </CCardBody>
-          <CCardFooter>
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <CButton class="mx-3" color="warning" @click="changePage(currentPage - 1)"
-                  :disabled="currentPage === 1">Previous</CButton>
-                <CButton color="info" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">Next
-                </CButton>
+                    </tbody>
+                  </table>
+                </CCol>
+              </CRow>
+            </CCardBody>
+            <CCardFooter>
+              <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <div class="input-group mb-3">
+                      <label class="input-group-text">Limit</label>
+                      <select class="form-select" v-model="limit"
+                              @change="handleLimitChange($event)">
+                        <option selected value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="40">40</option>
+                        <option value="60">60</option>
+                        <option value="100">100</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <CustPagination :totalItems="totalData" :items-per-page="limit"
+                                    :current-page="currentPage"
+                                    @page-changed="handlePageChange($event)"/>
+                  </div>
+                </div>
               </div>
-              <div>Page {{ currentPage }} of {{ totalPages }}</div>
-            </div>
-          </CCardFooter>
-        </CCard>
-      </CCol>
-    </CRow>
-  </CContainer>
-</div>
+            </CCardFooter>
+          </CCard>
+        </CCol>
+      </CRow>
+    </CContainer>
+    <ModalItemCheckDetail :visible="isVisibleDetailItemCheck" :item="selectedItemCheck"
+                          @on-close="onCloseItemCheckDetail"/>
+  </div>
 </template>
 
 <script>
 import api from "@/apis/CommonAPI";
-import { Toaster } from "vue-sonner";
+import {toast, Toaster} from "vue-sonner";
 
 import ModalItemcheck from "@/components/Tpm/ModalItemcheck";
 import SearchBarLedger from "@/components/Tpm/SearchBarLedger";
 import StatusTpm from "../../views/charts/StatusTpm.vue";
 import NewUpdate from "@/components/Tpm/NewUpdate";
 import AddLedger from "../../components/Tpm/AddLedger.vue";
-import { getUpdate, getUpdatedItem } from "../../components/Tpm/NewUpdate.vue";
+import {getUpdate, getUpdatedItem} from "../../components/Tpm/NewUpdate.vue";
+import CustPagination from "@/components/Tpm/CustPagination.vue";
+import ModalItemCheckDetail from "@/components/Tpm/ModalItemCheckDetail.vue";
 
 export default {
   name: "TpmLedger",
@@ -165,25 +188,10 @@ export default {
       rowsNumber: 1,
       currentPage: 1,
       currentView: "machineAndLine", // Track current view condition
-
-      limitOpts: [
-        {
-          label: 5,
-          value: 5,
-        },
-        {
-          label: 10,
-          value: 10,
-        },
-        {
-          label: 100,
-          value: 100,
-        },
-        {
-          label: "All",
-          value: -1,
-        },
-      ],
+      limit: 20,
+      totalData: 0,
+      isVisibleDetailItemCheck: false,
+      selectedItemCheck: null,
     };
   },
   computed: {
@@ -204,28 +212,62 @@ export default {
       const end = start + this.rowsPerPage;
       return this.items.slice(start, end);
     },
+    isItemCheck() {
+      return this.currentView === "machineAndLine";
+    }
   },
   methods: {
     async getLedgers(filter) {
       try {
-        if (this.currentView == "machineAndLine") {
-          this.filter = filter;
-          let ledgers = await api.get(`/tpm/ledgers`, "?" + filter);
-          this.ledgers = ledgers.data.data;
+        this.isLoading = true;
+        if (filter?.isItemCheckView) {
+          this.currentView = "itemCheck";
+        }
+
+        if (!filter) {
+          filter = this.filter;
         } else {
           this.filter = filter;
-          let items = await api.get(`/tpm/itemchecks`, "?" + filter);
-          console.log(items);
-          this.items = items.data.data;
         }
+
+        this.filter = {
+          ...this.filter,
+          page: this.currentPage,
+          limit: this.limit,
+        };
+
+        const mappedFilter = {};
+        for (let key in this.filter) {
+          if (this.filter[key]) {
+            Object.assign(mappedFilter, {[key]: this.filter[key]});
+          }
+        }
+
+        if (mappedFilter?.isItemCheckView) {
+          delete mappedFilter.isItemCheckView;
+        }
+
+        const query = new URLSearchParams(mappedFilter);
+        if (this.currentView === "machineAndLine") {
+          let {data: response} = await api.get(`/tpm/ledgers`, `?${query.toString()}`);
+          this.ledgers = response?.data;
+          this.totalData = response?.paginated?.total ?? 0;
+        } else {
+          let {data: response} = await api.get(`/tpm/itemchecks`, `?${query.toString()}`);
+          this.items = response?.data;
+          this.totalData = response?.paginated?.total ?? 0;
+        }
+        console.log('ledgers', this.ledgers);
       } catch (error) {
         console.log(error);
+        toast.error("Terjadi kesalahan saat mengambil data");
+      } finally {
+        this.isLoading = false;
       }
     },
     async getItems(filter) {
       try {
-        this.filter = filter;
-        let items = await api.get(`/tpm/itemchecks`, "?" + filter);
+        let items = await api.get(`/tpm/itemchecks`, filter ? "?" + filter : "");
         console.log(items);
         this.items = items.data.data;
       } catch (error) {
@@ -238,30 +280,47 @@ export default {
       this.$refs.NewUpdated.getUpdatedItem();
     },
     async showDetail(ledger) {
-      this.isLoading = true;
       this.machine_nm = ledger.machine_nm;
-      this.ledger_id = ledger.ledger_id;
-      console.log(this.ledger_id);
-      setTimeout(() => {
-        this.showChanges(true);
-        this.isLoading = false;
-      }, 500);
-      this.getLedgers(this.filter);
+
+      this.$router.push({
+        name: "TpmLedgerDetail",
+        params: {id: ledger.ledger_id},
+      });
     },
     handleChangeView(view) {
       this.currentView = view;
+      this.filter = null;
+      this.getLedgers();
     },
     changePage(page) {
       if (page > 0 && page <= this.totalPages) {
         this.currentPage = page;
       }
     },
+    handleLimitChange(event) {
+      this.limit = event.target.value;
+      this.getLedgers();
+    },
+    handlePageChange(event) {
+      this.currentPage = event;
+      this.getLedgers();
+    },
+    showItemCheckDetail(item = null) {
+      this.selectedItemCheck = item;
+      this.isVisibleDetailItemCheck = true;
+    },
+    onCloseItemCheckDetail() {
+      this.selectedItemCheck = null;
+      this.isVisibleDetailItemCheck = false;
+    },
   },
   async mounted() {
-    await this.getLedgers();
-    await this.getItems();
+    /*await this.getLedgers();
+    await this.getItems();*/
   },
   components: {
+    ModalItemCheckDetail,
+    CustPagination,
     SearchBarLedger,
     NewUpdate,
     StatusTpm,
