@@ -103,7 +103,7 @@
                             </td>
                             <td v-else></td>
                           </template>
-                          <td>{{ schedule.next_check.split("T")[0] }}</td>
+                          <td>{{ schedule?.next_check && schedule?.next_check?.includes('T') ? schedule.next_check.split("T")[0] : '' }}</td>
                         </tr>
                       </template>
                       <template v-else>
