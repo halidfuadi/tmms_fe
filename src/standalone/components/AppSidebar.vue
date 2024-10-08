@@ -145,13 +145,13 @@ export default {
               icon: 'cilTask',
               parentId: 'MST',
             },
-            {
+            /*{
               component: 'CNavItem',
               to: '/tpm/ledgerNew',
               name: 'TPM Ledger New',
               icon: 'cilTask',
               parentId: 'ROOT',
-            },
+            },*/
             {
               component: 'CNavItem',
               to: '/tpm/sparepart',

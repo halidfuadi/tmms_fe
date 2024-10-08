@@ -1,6 +1,6 @@
 <template>
   <CCard>
-    <CCardHeader> Add Ledger </CCardHeader>
+    <CCardHeader class="fw-bold">Add Ledger</CCardHeader>
     <CCardBody>
       <CRow>
         <CCol class="overflow-auto">

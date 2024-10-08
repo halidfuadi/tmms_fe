@@ -118,7 +118,10 @@
   <ModalSparepart v-if="id_ledger" :visible="is_show_sparepart" :id_ledger="id_ledger"
                   @close="() => { is_show_sparepart = false }"
                   size="xl"/>
-  <ModalItemCheckDetail :visible="isVisibleDetail" :item="selectedItem" @on-close="onCloseItemDetail"/>
+  <ModalItemCheckDetail :visible="isVisibleDetail" :item="selectedItem"
+                        :line-name="items && items.length > 0 ? items[0].line_nm : ''"
+                        :machine-name="items && items.length > 0 ? items[0].machine_nm : ''"
+                        @on-close="onCloseItemDetail($event)"/>
   <CModal :visible="is_deleting" :item="item" @close="() => { is_deleting = false }">
     <CModalHeader>
       <CModalTitle>Are you sure to delete this item?</CModalTitle>
@@ -279,9 +282,12 @@ export default {
       this.selectedItem = item;
       this.isVisibleDetail = true;
     },
-    onCloseItemDetail() {
+    onCloseItemDetail(event) {
       this.selectedItem = null;
       this.isVisibleDetail = false;
+      if (event === true) {
+        this.getItems();
+      }
     }
   },
   mounted() {

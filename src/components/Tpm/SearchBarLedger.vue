@@ -1,6 +1,6 @@
 <template>
-  <CCard class="mb-2" style="z-index: 1">
-    <CCardHeader> Search</CCardHeader>
+  <CCard class="h-100" style="z-index: 1">
+    <CCardHeader class="fw-bold">Search</CCardHeader>
     <CCardBody>
       <CRow class="mb-3" v-if="!isItemCheckView">
         <CCol lg="6">

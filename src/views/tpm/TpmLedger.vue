@@ -1,22 +1,40 @@
 <template>
-  <div>
+  <CRow>
     <CContainer fluid>
       <CRow>
         <CCol lg="12">
           <Toaster position="top-center" closeButton/>
           <CCard class="mb-3 p-2">
             <CRow>
-              <CCol lg="4">
+              <CCol lg="6">
                 <SearchBarLedger @getLedgers="getLedgers" @changeView="handleChangeView"/>
-                <AddLedger/>
               </CCol>
-              <CCol lg="8">
-                <NewUpdate ref="NewUpdated"/>
+              <CCol lg="6">
+                <AddLedger/>
               </CCol>
             </CRow>
           </CCard>
-          <ModalItemcheck :isShow="isShow" :ledger_id="ledger_id" :machine_nm="machine_nm"
-                          @showChanges="showChanges(state)"/>
+          <CCard class="mb-3 p-2">
+            <div class="d-flex gap-2">
+              <div class="flex-grow-1"></div>
+              <div class="d-flex gap-2 align-items-center">
+                <div>
+                  <CButton
+                    class="btn btn-sm text-white" color="info" @click="onClickItemCheckRequest(true)">
+                    <span>New Items</span>
+                    <CBadge color="danger" class="ms-2 text-white">1</CBadge>
+                  </CButton>
+                </div>
+                <div>
+                  <CButton
+                    class="btn btn-sm text-white" color="info" @click="onClickItemCheckRequest(false)">
+                    <span>Changes Items</span>
+                    <CBadge color="danger" class="ms-2 text-white">1</CBadge>
+                  </CButton>
+                </div>
+              </div>
+            </div>
+          </CCard>
           <CCard class="mb-5">
             <CCardBody>
               <CRow>
@@ -144,9 +162,12 @@
         </CCol>
       </CRow>
     </CContainer>
+    <ModalItemcheck :isShow="isShow" :ledger_id="ledger_id" :machine_nm="machine_nm"
+                    @showChanges="showChanges(state)"/>
     <ModalItemCheckDetail :visible="isVisibleDetailItemCheck" :item="selectedItemCheck"
                           @on-close="onCloseItemCheckDetail"/>
-  </div>
+    <ModalItemCheckRequest :visible="isVisibleItemCheckRequest" @on-close="onCloseItemCheckRequest" :is-new="isClickNewItemRequest"/>
+  </CRow>
 </template>
 
 <script>
@@ -161,6 +182,7 @@ import AddLedger from "../../components/Tpm/AddLedger.vue";
 import {getUpdate, getUpdatedItem} from "../../components/Tpm/NewUpdate.vue";
 import CustPagination from "@/components/Tpm/CustPagination.vue";
 import ModalItemCheckDetail from "@/components/Tpm/ModalItemCheckDetail.vue";
+import ModalItemCheckRequest from "@/components/Tpm/ModalItemCheckRequest.vue";
 
 export default {
   name: "TpmLedger",
@@ -192,6 +214,8 @@ export default {
       totalData: 0,
       isVisibleDetailItemCheck: false,
       selectedItemCheck: null,
+      isVisibleItemCheckRequest: false,
+      isClickNewItemRequest: false,
     };
   },
   computed: {
@@ -313,12 +337,20 @@ export default {
       this.selectedItemCheck = null;
       this.isVisibleDetailItemCheck = false;
     },
+    onClickItemCheckRequest(isNew = false) {
+      this.isVisibleItemCheckRequest = true;
+      this.isClickNewItemRequest = isNew;
+    },
+    onCloseItemCheckRequest() {
+      this.isVisibleItemCheckRequest = false;
+    }
   },
   async mounted() {
     /*await this.getLedgers();
     await this.getItems();*/
   },
   components: {
+    ModalItemCheckRequest,
     ModalItemCheckDetail,
     CustPagination,
     SearchBarLedger,

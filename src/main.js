@@ -30,6 +30,9 @@ if (process.env.VUE_APP_STANDALONE_SINGLE_SPA === 'true') {
 
 import VueApexCharts from "vue3-apexcharts";
 
+import Autocomplete from '@trevoreyre/autocomplete-vue'
+import '@trevoreyre/autocomplete-vue/dist/style.css'
+
 
 const vueLifecycles = singleSpaVue({
   createApp,
@@ -61,6 +64,7 @@ const vueLifecycles = singleSpaVue({
       highcharts: Highcharts
     })
     app.use(VCalendar, {})
+    app.use(Autocomplete)
   },
 })
 

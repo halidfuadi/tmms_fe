@@ -1,9 +1,11 @@
 <template>
   <CRow>
-    <CCol>
+    <CCol v-if="isNew && !showAll">
       <CCard>
         <CCardHeader>
-          NEW ITEM
+          <h5 class="fw-bold">
+            New Item
+          </h5>
         </CCardHeader>
         <CCardBody class="tableFixHead">
           <template v-if="dataUpdate.length > 0">
@@ -55,10 +57,10 @@
         </CCardBody>
       </CCard>
     </CCol>
-    <CCol>
+    <CCol v-else>
       <CCard>
         <CCardHeader>
-          CHANGED ITEM
+          <h5 clss="fw-bold">Changed Item</h5>
         </CCardHeader>
         <CCardBody class="tableFixHead">
           <!-- <CRow> -->
@@ -170,7 +172,6 @@
     </CCol>
   </CRow>
 </template>
-
 <script>
 import api from "@/apis/CommonAPI";
 import { CAccordion, CAccordionBody, CAccordionItem, CCard, CCardFooter, CCardHeader, CCol } from '@coreui/vue';
@@ -188,6 +189,17 @@ export default {
 
   components: {
     Toaster
+  },
+
+  props: {
+    isNew: {
+      type: Boolean,
+      default: true,
+    },
+    showAll: {
+      type: Boolean,
+      default: false,
+    }
   },
 
   methods: {
