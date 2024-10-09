@@ -60,7 +60,7 @@ export default {
       },
     };
 
-    let detailUrl =  process.env.VUE_APP_API_URL + url;
+    let detailUrl =  process.env.VUE_APP_API_URL + url + (params ? params : "");
     if (params == "?") {
       detailUrl = process.env.VUE_APP_API_URL + `${url}`;
     } else if (defaultGet) {

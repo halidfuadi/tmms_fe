@@ -30,10 +30,6 @@
                    style="max-width: 150px; margin-bottom: 5px;">
             Add New Itemcheck
           </CButton>
-          <CButton class="btn btn-sm col text-white" color="warning" @click="info(id_ledger)"
-                   style="max-width: 100px; margin-bottom: 5px;">
-            SPAREPART
-          </CButton>
         </CCol>
       </CRow>
       <CRow v-if="is_add">
@@ -42,7 +38,6 @@
       <CRow>
         <CCol class="overflow-auto" lg="12">
           <table class="table table-bordered table-striped" responsive="md">
-
             <thead>
             <tr>
               <th class="no text-center">No</th>
@@ -64,7 +59,7 @@
 
             <tbody v-if="items && items.length > 0">
             <tr v-for="(item, i) in items" :key="i">
-              <td class="text-center">{{ i + 1 }}</td>
+              <td class="text-center">{{ item?.no }}</td>
               <td class="item-check text-center">{{ item?.itemcheck_nm }}</td>
               <td class="item-check text-center">
                 <CFormTextarea v-model="item.details" :value="item?.details" disabled/>
@@ -114,13 +109,42 @@
         </CCol>
       </CRow>
     </CCardBody>
+    <CCardFooter>
+      <div class="card-footer">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="input-group mb-3">
+              <label class="input-group-text">Limit</label>
+              <select
+                class="form-select"
+                v-model="limit"
+                @change="handleLimitChange($event)"
+              >
+                <option selected value="10">10</option>
+                <option value="20">20</option>
+                <option value="40">40</option>
+                <option value="60">60</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <CustPagination
+              :totalItems="totalData"
+              :items-per-page="limit"
+              :current-page="currentPage"
+              @page-changed="handlePageChange($event)"
+            />
+          </div>
+        </div>
+      </div>
+    </CCardFooter>
   </CCard>
-  <ModalSparepart v-if="id_ledger" :visible="is_show_sparepart" :id_ledger="id_ledger"
-                  @close="() => { is_show_sparepart = false }"
-                  size="xl"/>
   <ModalItemCheckDetail :visible="isVisibleDetail" :item="selectedItem"
                         :line-name="items && items.length > 0 ? items[0].line_nm : ''"
                         :machine-name="items && items.length > 0 ? items[0].machine_nm : ''"
+                        :line-id="items && items.length > 0 ? items[0].line_id : ''"
+                        :ledger-id="items && items.length > 0 ? items[0].ledger_id : ''"
                         @on-close="onCloseItemDetail($event)"/>
   <CModal :visible="is_deleting" :item="item" @close="() => { is_deleting = false }">
     <CModalHeader>
@@ -157,20 +181,8 @@ import api from "@/apis/CommonAPI";
 import {mapGetters} from "vuex";
 import AddItemcheck from "@/components/Tpm/AddItemcheck";
 import {toast} from "vue-sonner";
-import ModalSparepart from "@/components/Tpm/ModalSparepart";
-import {
-  CFormTextarea,
-  CFormSelect,
-  CButton,
-  CModal,
-  CModalHeader,
-  CModalTitle,
-  CModalBody,
-  CModalFooter,
-  CRow,
-  CCol
-} from "@coreui/vue";
 import ModalItemCheckDetail from "@/components/Tpm/ModalItemCheckDetail.vue";
+import CustPagination from "@/components/Tpm/CustPagination.vue";
 
 export default {
   name: "TpmLedgerDetail",
@@ -193,6 +205,10 @@ export default {
       machine_nm: null,
       isVisibleDetail: false,
       selectedItem: null,
+      limit: 20,
+      totalData: 0,
+      currentPage: 1,
+      filter: null,
     };
   },
   watch: {
@@ -208,15 +224,37 @@ export default {
     ...mapGetters(["getSubmitStatus"]),
   },
   methods: {
-    async getItems() {
+    async getItems(filter = null) {
       try {
-        let items = await api.get(`/tpm/ledgers/detail`, `?ledger_id=${this.id_ledger}`);
-        items.data.data.forEach(obj => {
-          obj.is_editing = false
-        });
+        if (filter?.isItemCheckView) {
+          this.currentView = "itemCheck";
+        }
+
+        if (!filter) {
+          filter = this.filter;
+        } else {
+          this.filter = filter;
+        }
+
+        this.filter = {
+          ...this.filter,
+          page: this.currentPage,
+          limit: this.limit,
+        };
+
+        const mappedFilter = {};
+        for (let key in this.filter) {
+          if (this.filter[key]) {
+            Object.assign(mappedFilter, {[key]: this.filter[key]});
+          }
+        }
+
+        const query = new URLSearchParams(mappedFilter);
+
+        let items = await api.get(`/tpm/itemchecks`, `?ledger_id=${this.id_ledger}&${query.toString()}`);
         this.items = items.data.data;
         this.machine_nm = this.items && this.items.length > 0 ? this.items[0].machine_nm : null;
-        console.log(items.data.data);
+        this.totalData = items?.data?.paginated?.total ?? 0;
       } catch (error) {
         console.log(error);
       }
@@ -288,7 +326,15 @@ export default {
       if (event === true) {
         this.getItems();
       }
-    }
+    },
+    handleLimitChange(event) {
+      this.limit = event.target.value;
+      this.getItems();
+    },
+    handlePageChange(event) {
+      this.currentPage = event;
+      this.getItems();
+    },
   },
   mounted() {
     this.getIncharge();
@@ -299,9 +345,9 @@ export default {
     }
   },
   components: {
+    CustPagination,
     ModalItemCheckDetail,
     AddItemcheck,
-    ModalSparepart
   }
 };
 </script>

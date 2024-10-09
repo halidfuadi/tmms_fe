@@ -1,9 +1,17 @@
 <template>
-  <CModal :visible="visible" backdrop="static" size="xl" @close="close()">
-    <CModalHeader closeButton><h5 class="fw-bold">{{ title }}</h5></CModalHeader>
-    <CModalBody>
-      <Toaster position="top-center" closeButton/>
-      <div>
+  <CModal
+    :visible="visible"
+    :fullscreen="isAddMultiple"
+    backdrop="static"
+    size="xl"
+    @close="close()"
+  >
+    <CModalHeader closeButton
+      ><h5 class="fw-bold">{{ title }}</h5></CModalHeader
+    >
+    <CModalBody :class="{'p-5': isAddMultiple}">
+      <Toaster position="top-center" closeButton />
+      <div class="mb-3">
         <CRow class="mb-2">
           <CCol lg="6" class="mb-2">
             <CFormInput
@@ -17,7 +25,6 @@
               v-model="form.line_id"
               :options="lineOptions"
               placeholder="Select Line"
-              disabled
             />
           </CCol>
           <CCol lg="6" class="mb-2">
@@ -32,7 +39,6 @@
               v-model="form.machine_id"
               :options="machineOptions"
               placeholder="Select Machine"
-              disabled
             />
           </CCol>
           <CCol lg="12" class="mb-2">
@@ -88,41 +94,44 @@
                       v-on="resultListListeners"
                     >
                       <thead>
-                      <tr>
-                        <th>Nama</th>
-                        <th>Used Machine</th>
-                        <th>Method</th>
-                        <th>Counter</th>
-                        <th>Cycle Value</th>
-                        <th>Cycle Period</th>
-                        <th>Period</th>
-                      </tr>
+                        <tr>
+                          <th>Name</th>
+                          <th>Used Machine</th>
+                          <th>Method</th>
+                          <th>Counter</th>
+                          <th>Cycle Value</th>
+                          <th>Cycle Period</th>
+                          <th>Period</th>
+                        </tr>
                       </thead>
                       <tbody>
-                      <tr
-                        v-for="(item, i) in results"
-                        :key="i"
-                        v-bind="resultProps[i]"
-                      >
-                        <td>{{ item.itemcheck_nm }}</td>
-                        <td>{{ item.machine_nm }}</td>
-                        <td>{{ item.method_check }}</td>
-                        <td>{{ item.is_counter ? "Ya" : "Tidak" }}</td>
-                        <td>{{ item.val_periodic }}</td>
-                        <td>
-                          {{
-                            item.period_id == 0
-                              ? "Day"
-                              : item.period_id == 1
+                        <tr
+                          v-for="(item, i) in results"
+                          :key="i"
+                          v-bind="resultProps[i]"
+                        >
+                          <td>{{ item.itemcheck_nm }}</td>
+                          <td>{{ item.machine_nm }}</td>
+                          <td>{{ item.method_check }}</td>
+                          <td>{{ item.is_counter ? "Ya" : "Tidak" }}</td>
+                          <td>{{ item.val_periodic }}</td>
+                          <td>
+                            {{
+                              item.period_id == 0
+                                ? "Day"
+                                : item.period_id == 1
                                 ? "Month"
                                 : "Year"
-                          }}
-                        </td>
-                        <td>{{ item.lifespan_counter }}</td>
-                      </tr>
+                            }}
+                          </td>
+                          <td>{{ item.lifespan_counter }}</td>
+                        </tr>
                       </tbody>
                     </table>
-                    <div v-if="rootProps['data-loading']" class="d-flex align-items-center justify-content-center my-2">
+                    <div
+                      v-if="rootProps['data-loading']"
+                      class="d-flex align-items-center justify-content-center my-2"
+                    >
                       <CSpinner
                         component="span"
                         size="sm"
@@ -167,7 +176,7 @@
             />
             <CRow>
               <CCol>
-                <CFormInput label="Man Power" v-model="form.mp" class="mb-2"/>
+                <CFormInput label="Man Power" v-model="form.mp" class="mb-2" />
               </CCol>
               <CCol>
                 <CFormInput
@@ -230,10 +239,10 @@
             </div>
             <CRow>
               <CCol>
-                <CFormInput label="Lower Limit" v-model="form.lower_limit"/>
+                <CFormInput label="Lower Limit" v-model="form.lower_limit" />
               </CCol>
               <CCol>
-                <CFormInput label="Upper Limit" v-model="form.upper_limit"/>
+                <CFormInput label="Upper Limit" v-model="form.upper_limit" />
               </CCol>
             </CRow>
           </CCol>
@@ -251,7 +260,7 @@
         </template>
         <template v-else>
           <CRow>
-            <CCol>
+            <CCol v-if="showSparepart">
               <CButton
                 class="btn btn-sm col text-white"
                 color="info"
@@ -260,13 +269,15 @@
                 Sparepart List
               </CButton>
             </CCol>
+            <CCol v-else></CCol>
             <CCol class="d-flex gap-2 justify-content-end" style="flex: 0">
-                <CButton
-                  class="btn btn-sm col text-white"
-                  color="warning"
-                  @click="submit()">
-                  {{ actionTitle }}
-                </CButton>
+              <CButton
+                class="btn btn-sm col text-white"
+                color="warning"
+                @click="submit()"
+              >
+                {{ actionTitle }}
+              </CButton>
               <CButton
                 v-if="item"
                 class="btn btn-sm col text-white"
@@ -291,15 +302,46 @@
           :ledger_itemcheck_id="item?.ledger_itemcheck_id"
         />
       </div>
+      <template v-if="isAddMultiple">
+        <TableItemCheckModifiable :items="addedItems" :has-action="true">
+          <template #action="{ item, index }">
+            <div class="d-flex align-items-center h-100">
+              <CButton
+                class="btn btn-sm col text-white"
+                color="warning"
+                @click="deleteAddedItemCheckMultiple(item, index)"
+              >
+                Hapus
+              </CButton>
+            </div>
+          </template>
+        </TableItemCheckModifiable>
+      </template>
     </CModalBody>
+    <CFooter
+      v-if="isAddMultiple"
+      class="justify-content-center align-items-center"
+    >
+      <div style="flex-shrink: 0">
+        <CButton
+          class="btn btn-sm col text-white"
+          color="warning"
+          @click="saveItemCheckMultiple()"
+          style="width: 10rem"
+        >
+          Save
+        </CButton>
+      </div>
+    </CFooter>
   </CModal>
 </template>
 <script>
 import CollapseSparepartList from "@/components/Tpm/CollapseSparepartList.vue";
 import api from "@/apis/CommonAPI";
-import {toast, Toaster} from "vue-sonner";
+import { toast, Toaster } from "vue-sonner";
 import Treeselect from "@zanmato/vue3-treeselect";
 import "@zanmato/vue3-treeselect/dist/vue3-treeselect.min.css";
+import TableItemCheckModifiable from "@/components/Tpm/TableItemCheckModifiable.vue";
 
 const defaultForm = {
   itemcheck_id: null,
@@ -326,10 +368,21 @@ export default {
   props: {
     visible: [Boolean, String],
     item: Object,
+    lineId: String,
+    ledgerId: String,
     lineName: String,
     machineName: String,
+    showSparepart: {
+      type: Boolean,
+      default: true,
+    },
+    isAddMultiple: {
+      type: Boolean,
+      default: false,
+    },
   },
   components: {
+    TableItemCheckModifiable,
     CollapseSparepartList,
     Treeselect,
     Toaster,
@@ -346,6 +399,7 @@ export default {
       isFocusedItemCheck: false,
       isLoadingItemCheck: false,
       isCounter: false,
+      addedItems: [],
     };
   },
   mounted() {
@@ -366,6 +420,10 @@ export default {
       }
 
       this.isCounter = this.form.is_counter;
+
+      if (this.isAddMultiple) {
+        this.addedItems = [];
+      }
     },
     form: {
       deep: true,
@@ -412,7 +470,7 @@ export default {
     },
     async getItemCheckOptions(searchName = "") {
       try {
-        let {data: response} = await api.get(
+        let { data: response } = await api.get(
           `/tpm/itemchecks`,
           `?${
             searchName ? `itemcheck_nm=${searchName}` : "1=1"
@@ -435,7 +493,7 @@ export default {
     },
     async getLine() {
       try {
-        const {data: response} = await api.post(`/tpm/lines/search`);
+        const { data: response } = await api.post(`/tpm/lines/search`);
         if (response.data) {
           this.lineOptions = response.data.map((e) => ({
             id: e.uuid,
@@ -454,12 +512,12 @@ export default {
           this.lineOptions = [];
         }
       } catch (e) {
-        console.log('getLine()', e);
+        console.log("getLine()", e);
       }
     },
     async getMachines() {
       try {
-        const {data: response} = await api.post(`/tpm/machines/search`, {
+        const { data: response } = await api.post(`/tpm/machines/search`, {
           line_id: this.form.line_id,
         });
 
@@ -472,7 +530,7 @@ export default {
           this.machineOptions = null;
         }
       } catch (e) {
-        console.log('getMachines()', e);
+        console.log("getMachines()", e);
       }
     },
     async submit() {
@@ -501,21 +559,38 @@ export default {
         return;
       }
 
+      if (mappedForm.no) {
+        delete mappedForm.no;
+      }
+
+      if (this.isAddMultiple) {
+        this.addedItems = [
+          ...this.addedItems,
+          {
+            ...mappedForm,
+          },
+        ];
+        return;
+      }
+
       try {
         this.isSubmitLoading = true;
-        if (mappedForm.no) {
-          delete mappedForm.no;
-        }
 
-        let {data: response} = await api.post(
+        let result = await api.post(
           this.item
             ? `/tpm/itemchecks/editItemCheck`
             : `/tpm/itemchecks/addItemCheck`,
           mappedForm
         );
-        if (response) {
-          toast.success("data berhasil di simpan");
+        if (result.status === 200) {
+          toast.success("Data berhasil di simpan", {
+            description: "Item check sedang dalam proses approval",
+          });
           this.close(true);
+        } else {
+          toast.error("Terjadi kesalahan saat menyimpan data", {
+            description: result.data.message?.message ?? result.data.message,
+          });
         }
       } catch (e) {
         toast.error("Terjadi kesalahan saat menyimpan data", {
@@ -525,10 +600,10 @@ export default {
         this.isSubmitLoading = false;
       }
     },
-    applyDelete() {
-    },
+    applyDelete() {},
     onChangeCounter(event) {
-      this.isCounter = event.target.value === "true" || event.target.value === true;
+      this.isCounter =
+        event.target.value === "true" || event.target.value === true;
     },
     async autoCompleteItemCheck(input) {
       console.log("request");
@@ -562,12 +637,28 @@ export default {
         ...item,
         incharge_id: this.form.incharge_id,
         is_counter: item.is_counter ? "true" : "false",
+        ledger_id: this.ledgerId ? this.ledgerId : null,
+        line_id: this.form.line_id ? this.form.line_id.id : null,
       };
+
       this.isCounter = item.is_counter;
-      console.log("item selected", this.form);
     },
     setSelectedItemCheck(item) {
       return item.itemcheck_nm;
+    },
+    validatedAddedItemCheckMultiple() {
+      if (
+        !this.form.line_id
+        || !this.form.machine_id
+      ) {
+        toast.warning("Line dan machine harus diisi");
+        return;
+      }
+
+    },
+    saveItemCheckMultiple() {},
+    deleteAddedItemCheckMultiple(item, index) {
+      this.addedItems = [...this.addedItems.filter((_, i) => i !== index)];
     },
     close(reload = false) {
       this.$emit("on-close", reload);

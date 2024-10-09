@@ -1,5 +1,5 @@
 import './set-public-path'
-import {h, createApp} from 'vue'
+import Vue, {h, createApp} from 'vue'
 import singleSpaVue from 'single-spa-vue'
 
 
@@ -33,6 +33,11 @@ import VueApexCharts from "vue3-apexcharts";
 import Autocomplete from '@trevoreyre/autocomplete-vue'
 import '@trevoreyre/autocomplete-vue/dist/style.css'
 
+import {LoadingPlugin} from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/css/index.css';
+
+import mitt from 'mitt';
+const emitter = mitt();
 
 const vueLifecycles = singleSpaVue({
   createApp,
@@ -64,7 +69,10 @@ const vueLifecycles = singleSpaVue({
       highcharts: Highcharts
     })
     app.use(VCalendar, {})
-    app.use(Autocomplete)
+    app.use(Autocomplete);
+    app.use(LoadingPlugin);
+
+    app.config.globalProperties.emitter = emitter;
   },
 })
 

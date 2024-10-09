@@ -7,7 +7,10 @@
           <CCard class="mb-3 p-2">
             <CRow>
               <CCol lg="6">
-                <SearchBarLedger @getLedgers="getLedgers" @changeView="handleChangeView"/>
+                <SearchBarLedger
+                  @getLedgers="getLedgers"
+                  @changeView="handleChangeView"
+                />
               </CCol>
               <CCol lg="6">
                 <AddLedger/>
@@ -16,20 +19,38 @@
           </CCard>
           <CCard class="mb-3 p-2">
             <div class="d-flex gap-2">
-              <div class="flex-grow-1"></div>
+              <div class="flex-grow-1">
+                <CButton
+                  class="btn btn-sm text-white"
+                  color="info"
+                  @click="onClickAddItemCheck"
+                >
+                  Add Item Check
+                </CButton>
+              </div>
               <div class="d-flex gap-2 align-items-center">
                 <div>
                   <CButton
-                    class="btn btn-sm text-white" color="info" @click="onClickItemCheckRequest(true)">
+                    class="btn btn-sm text-white"
+                    color="info"
+                    @click="onClickItemCheckRequest(true)"
+                  >
                     <span>New Items</span>
-                    <CBadge color="danger" class="ms-2 text-white">1</CBadge>
+                    <CBadge color="danger" class="ms-2 text-white"
+                    >{{ totalItemCheckRequest.added }}
+                    </CBadge>
                   </CButton>
                 </div>
                 <div>
                   <CButton
-                    class="btn btn-sm text-white" color="info" @click="onClickItemCheckRequest(false)">
+                    class="btn btn-sm text-white"
+                    color="info"
+                    @click="onClickItemCheckRequest(false)"
+                  >
                     <span>Changes Items</span>
-                    <CBadge color="danger" class="ms-2 text-white">1</CBadge>
+                    <CBadge color="danger" class="ms-2 text-white"
+                    >{{ totalItemCheckRequest.changes }}
+                    </CBadge>
                   </CButton>
                 </div>
               </div>
@@ -39,7 +60,10 @@
             <CCardBody>
               <CRow>
                 <CCol class="overflow-auto tableFixHead" lg="12">
-                  <table v-if="currentView === 'machineAndLine'" class="table table-bordered table-striped">
+                  <table
+                    v-if="currentView === 'machineAndLine'"
+                    class="table table-bordered table-striped"
+                  >
                     <thead>
                     <tr>
                       <th class="text-center">No</th>
@@ -57,18 +81,25 @@
                       <td class="text-center">{{ ledger?.line_nm }}</td>
                       <td class="text-center">{{ ledger?.machine_nm }}</td>
                       <td class="text-center">
-                        <CBadge class="text-light bg-dark" shape="pill">{{
-                            ledger?.num_item_checks
-                          }}
+                        <CBadge class="text-light bg-dark" shape="pill"
+                        >{{ ledger?.num_item_checks }}
                         </CBadge>
                       </td>
                       <td class="align-center">
                         <div class="d-flex justify-content-center">
-                          <CButton class="btn btn-sm col me-3 text-white" color="success" @click="showDetail(ledger)"
-                                   style="max-width: 100px">
+                          <CButton
+                            class="btn btn-sm col me-3 text-white"
+                            color="success"
+                            @click="showDetail(ledger)"
+                            style="max-width: 100px"
+                          >
                             Item Check
                           </CButton>
-                          <CButton class="btn btn-sm col text-white" color="danger" style="max-width: 100px">
+                          <CButton
+                            class="btn btn-sm col text-white"
+                            color="danger"
+                            style="max-width: 100px"
+                          >
                             Delete
                           </CButton>
                         </div>
@@ -78,7 +109,12 @@
                     <tbody v-else-if="isLoading">
                     <tr>
                       <th class="text-center" colspan="5">
-                        <CSpinner component="span" size="sm" variant="grow" aria-hidden="true"/>
+                        <CSpinner
+                          component="span"
+                          size="sm"
+                          variant="grow"
+                          aria-hidden="true"
+                        />
                         Loading...
                       </th>
                     </tr>
@@ -103,19 +139,25 @@
                       <td class="text-center">{{ item?.method_check }}</td>
                       <td class="text-center">{{ item?.itemcheck_nm }}</td>
                       <td class="text-center">
-                        <CBadge class="text-light bg-dark" shape="pill">{{
-                            item?.total_machines
-                          }}
+                        <CBadge class="text-light bg-dark" shape="pill"
+                        >{{ item?.total_machines }}
                         </CBadge>
                       </td>
                       <td class="align-center">
                         <div class="d-flex justify-content-center">
-                          <CButton class="btn btn-sm col me-3 text-white" color="success"
-                                   @click="showItemCheckDetail(item)"
-                                   style="max-width: 100px">
+                          <CButton
+                            class="btn btn-sm col me-3 text-white"
+                            color="success"
+                            @click="showItemCheckDetail(item)"
+                            style="max-width: 100px"
+                          >
                             Detail
                           </CButton>
-                          <CButton class="btn btn-sm col text-white" color="danger" style="max-width: 100px">
+                          <CButton
+                            class="btn btn-sm col text-white"
+                            color="danger"
+                            style="max-width: 100px"
+                          >
                             Delete
                           </CButton>
                         </div>
@@ -125,7 +167,12 @@
                     <tbody v-else-if="isLoading">
                     <tr>
                       <th class="text-center" colspan="5">
-                        <CSpinner component="span" size="sm" variant="grow" aria-hidden="true"/>
+                        <CSpinner
+                          component="span"
+                          size="sm"
+                          variant="grow"
+                          aria-hidden="true"
+                        />
                         Loading...
                       </th>
                     </tr>
@@ -140,8 +187,11 @@
                   <div>
                     <div class="input-group mb-3">
                       <label class="input-group-text">Limit</label>
-                      <select class="form-select" v-model="limit"
-                              @change="handleLimitChange($event)">
+                      <select
+                        class="form-select"
+                        v-model="limit"
+                        @change="handleLimitChange($event)"
+                      >
                         <option selected value="10">10</option>
                         <option value="20">20</option>
                         <option value="40">40</option>
@@ -151,9 +201,12 @@
                     </div>
                   </div>
                   <div>
-                    <CustPagination :totalItems="totalData" :items-per-page="limit"
-                                    :current-page="currentPage"
-                                    @page-changed="handlePageChange($event)"/>
+                    <CustPagination
+                      :totalItems="totalData"
+                      :items-per-page="limit"
+                      :current-page="currentPage"
+                      @page-changed="handlePageChange($event)"
+                    />
                   </div>
                 </div>
               </div>
@@ -162,12 +215,25 @@
         </CCol>
       </CRow>
     </CContainer>
-    <ModalItemcheck :isShow="isShow" :ledger_id="ledger_id" :machine_nm="machine_nm"
-                    @showChanges="showChanges(state)"/>
-    <ModalItemCheckDetail :visible="isVisibleDetailItemCheck" :item="selectedItemCheck"
-                          @on-close="onCloseItemCheckDetail"/>
-    <ModalItemCheckRequest :visible="isVisibleItemCheckRequest" @on-close="onCloseItemCheckRequest" :is-new="isClickNewItemRequest"/>
   </CRow>
+  <ModalItemcheck
+    :isShow="isShow"
+    :ledger_id="ledger_id"
+    :machine_nm="machine_nm"
+    @showChanges="showChanges(state)"
+  />
+  <ModalItemCheckDetail
+    :visible="isVisibleDetailItemCheck"
+    :item="selectedItemCheck"
+    :show-sparepart="false"
+    :is-add-multiple="isAddMultipleItemCheck"
+    @on-close="onCloseItemCheckDetail"
+  />
+  <ModalItemCheckRequest
+    :visible="isVisibleItemCheckRequest"
+    @on-close="onCloseItemCheckRequest"
+    :is-new="isClickNewItemRequest"
+  />
 </template>
 
 <script>
@@ -179,7 +245,6 @@ import SearchBarLedger from "@/components/Tpm/SearchBarLedger";
 import StatusTpm from "../../views/charts/StatusTpm.vue";
 import NewUpdate from "@/components/Tpm/NewUpdate";
 import AddLedger from "../../components/Tpm/AddLedger.vue";
-import {getUpdate, getUpdatedItem} from "../../components/Tpm/NewUpdate.vue";
 import CustPagination from "@/components/Tpm/CustPagination.vue";
 import ModalItemCheckDetail from "@/components/Tpm/ModalItemCheckDetail.vue";
 import ModalItemCheckRequest from "@/components/Tpm/ModalItemCheckRequest.vue";
@@ -216,6 +281,11 @@ export default {
       selectedItemCheck: null,
       isVisibleItemCheckRequest: false,
       isClickNewItemRequest: false,
+      totalItemCheckRequest: {
+        added: 0,
+        changes: 0,
+      },
+      isAddMultipleItemCheck: false,
     };
   },
   computed: {
@@ -238,7 +308,7 @@ export default {
     },
     isItemCheck() {
       return this.currentView === "machineAndLine";
-    }
+    },
   },
   methods: {
     async getLedgers(filter) {
@@ -273,15 +343,21 @@ export default {
 
         const query = new URLSearchParams(mappedFilter);
         if (this.currentView === "machineAndLine") {
-          let {data: response} = await api.get(`/tpm/ledgers`, `?${query.toString()}`);
+          let {data: response} = await api.get(
+            `/tpm/ledgers`,
+            `?${query.toString()}`
+          );
           this.ledgers = response?.data;
           this.totalData = response?.paginated?.total ?? 0;
         } else {
-          let {data: response} = await api.get(`/tpm/itemchecks`, `?${query.toString()}`);
+          let {data: response} = await api.get(
+            `/tpm/itemchecks`,
+            `?${query.toString()}`
+          );
           this.items = response?.data;
           this.totalData = response?.paginated?.total ?? 0;
         }
-        console.log('ledgers', this.ledgers);
+        //console.log("ledgers", this.ledgers);
       } catch (error) {
         console.log(error);
         toast.error("Terjadi kesalahan saat mengambil data");
@@ -291,7 +367,10 @@ export default {
     },
     async getItems(filter) {
       try {
-        let items = await api.get(`/tpm/itemchecks`, filter ? "?" + filter : "");
+        let items = await api.get(
+          `/tpm/itemchecks`,
+          filter ? "?" + filter : ""
+        );
         console.log(items);
         this.items = items.data.data;
       } catch (error) {
@@ -343,11 +422,47 @@ export default {
     },
     onCloseItemCheckRequest() {
       this.isVisibleItemCheckRequest = false;
+      this.isAddMultipleItemCheck = false;
+    },
+    async getCountItemCheckRequest() {
+      try {
+        let newItem = await api.get(
+          `/tpm/itemchecks/newItemRequest`,
+          "?count=true",
+          null,
+          false
+        );
+
+        let changeItem = await api.get(
+          `/tpm/itemchecks/updatedItem`,
+          "?count=true",
+          null,
+          false
+        );
+
+        this.totalItemCheckRequest = {
+          added: newItem.data?.data ? newItem.data?.data[0].total : 0,
+          changes: changeItem.data?.data ? changeItem.data?.data[0].total : 0,
+        };
+      } catch (error) {
+        console.log("error getCountItemCheckRequest()", error);
+      }
+    },
+    onClickAddItemCheck(){
+     this.isVisibleDetailItemCheck = true;
+     this.selectedItemCheck = null;
+     this.isAddMultipleItemCheck = true;
     }
   },
-  async mounted() {
-    /*await this.getLedgers();
-    await this.getItems();*/
+  mounted() {
+    this.getCountItemCheckRequest();
+
+    this.emitter.on('updatedItemRequest', (val) => {
+      if (val) {
+        this.getLedgers();
+        this.getCountItemCheckRequest();
+      }
+    });
   },
   components: {
     ModalItemCheckRequest,
