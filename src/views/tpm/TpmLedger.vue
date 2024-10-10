@@ -95,13 +95,13 @@
                           >
                             Item Check
                           </CButton>
-                          <CButton
-                            class="btn btn-sm col text-white"
-                            color="danger"
-                            style="max-width: 100px"
-                          >
-                            Delete
-                          </CButton>
+                          <!--                            <CButton
+                                                        class="btn btn-sm col text-white"
+                                                        color="danger"
+                                                        style="max-width: 100px"
+                                                      >
+                                                        Delete
+                                                      </CButton>-->
                         </div>
                       </td>
                     </tr>
@@ -120,7 +120,6 @@
                     </tr>
                     </tbody>
                   </table>
-
                   <table v-else class="table table-bordered table-striped">
                     <thead>
                     <tr>
@@ -157,6 +156,7 @@
                             class="btn btn-sm col text-white"
                             color="danger"
                             style="max-width: 100px"
+                            @click="confirmDeleteItemCheck(item)"
                           >
                             Delete
                           </CButton>
@@ -227,13 +227,14 @@
     :item="selectedItemCheck"
     :show-sparepart="false"
     :is-add-multiple="isAddMultipleItemCheck"
-    @on-close="onCloseItemCheckDetail"
+    @on-close="onCloseItemCheckDetail($event)"
   />
   <ModalItemCheckRequest
     :visible="isVisibleItemCheckRequest"
     @on-close="onCloseItemCheckRequest"
     :is-new="isClickNewItemRequest"
   />
+  <ModalConfirm title="Delete?" @confirm="applyDeleteItemCheck"/>
 </template>
 
 <script>
@@ -248,9 +249,23 @@ import AddLedger from "../../components/Tpm/AddLedger.vue";
 import CustPagination from "@/components/Tpm/CustPagination.vue";
 import ModalItemCheckDetail from "@/components/Tpm/ModalItemCheckDetail.vue";
 import ModalItemCheckRequest from "@/components/Tpm/ModalItemCheckRequest.vue";
+import utils from "@/utils/CommonUtils";
+import ModalConfirm from "@/components/Tpm/Modal/ModalConfirm.vue";
 
 export default {
   name: "TpmLedger",
+  components: {
+    ModalConfirm,
+    ModalItemCheckRequest,
+    ModalItemCheckDetail,
+    CustPagination,
+    SearchBarLedger,
+    NewUpdate,
+    StatusTpm,
+    ModalItemcheck,
+    Toaster,
+    AddLedger,
+  },
   data() {
     return {
       filtered: {
@@ -287,6 +302,16 @@ export default {
       },
       isAddMultipleItemCheck: false,
     };
+  },
+  mounted() {
+    this.getCountItemCheckRequest();
+
+    this.emitter.on("updatedItemRequest", (val) => {
+      if (val) {
+        this.getLedgers();
+        this.getCountItemCheckRequest();
+      }
+    });
   },
   computed: {
     totalPages() {
@@ -412,7 +437,7 @@ export default {
       this.selectedItemCheck = item;
       this.isVisibleDetailItemCheck = true;
     },
-    onCloseItemCheckDetail() {
+    onCloseItemCheckDetail(event) {
       this.selectedItemCheck = null;
       this.isVisibleDetailItemCheck = false;
     },
@@ -448,32 +473,36 @@ export default {
         console.log("error getCountItemCheckRequest()", error);
       }
     },
-    onClickAddItemCheck(){
-     this.isVisibleDetailItemCheck = true;
-     this.selectedItemCheck = null;
-     this.isAddMultipleItemCheck = true;
-    }
-  },
-  mounted() {
-    this.getCountItemCheckRequest();
-
-    this.emitter.on('updatedItemRequest', (val) => {
-      if (val) {
-        this.getLedgers();
-        this.getCountItemCheckRequest();
+    onClickAddItemCheck() {
+      this.isVisibleDetailItemCheck = true;
+      this.selectedItemCheck = null;
+      this.isAddMultipleItemCheck = true;
+    },
+    confirmDeleteItemCheck(item) {
+      this.selectedItemCheck = item;
+      this.$store.dispatch("MODALS/open", "DialogKonfirmasi");
+    },
+    async applyDeleteItemCheck() {
+      try {
+        const result = await api.delete(
+          `/tpm/itemchecks`,
+          this.selectedItemCheck.ledger_itemcheck_id
+        );
+        if (result.status === 200) {
+          utils.showSuccessResponse("Item check berhasil di hapus");
+          this.selectedItemCheck = null;
+          location.reload();
+        } else {
+          utils.showResponseError(
+            result.response.data.message?.message ??
+            result.response.data.message
+          );
+        }
+      } catch (e) {
+        console.error("applyDelete()", e);
+        utils.showResponseError(e);
       }
-    });
-  },
-  components: {
-    ModalItemCheckRequest,
-    ModalItemCheckDetail,
-    CustPagination,
-    SearchBarLedger,
-    NewUpdate,
-    StatusTpm,
-    ModalItemcheck,
-    Toaster,
-    AddLedger,
+    },
   },
 };
 </script>

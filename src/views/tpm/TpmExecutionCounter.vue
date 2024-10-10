@@ -261,7 +261,7 @@ export default {
       this.details = datas.data.data[0];
       console.log(this.details);
 
-      this.$refs.collapseSparepartList.getItems(this.details.real_ledger_itemcheck_id)
+      this.$refs.collapseSparepartList.getItems(this.details.ledger_itemcheck_id)
 
     },
 

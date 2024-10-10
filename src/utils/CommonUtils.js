@@ -1,7 +1,7 @@
-
 import Swal from 'sweetalert2'
 import axios from 'axios'
 import router from '../router'
+import {toast} from "vue-sonner";
 
 export default {
   // method
@@ -126,5 +126,14 @@ export default {
   async errorToken(path, msg) {
     await this.errorTokenSwalPassword(path, msg)
   },
-
+  showSuccessResponse(desc = "", message = "Data berhasil di simpan") {
+    toast.success(message, {
+      description: desc,
+    });
+  },
+  showResponseError(error = "Silahkan coba lagi", message = "Terjadi kesalahan saat menyimpan data") {
+    toast.error(message, {
+      description: error,
+    });
+  },
 }
