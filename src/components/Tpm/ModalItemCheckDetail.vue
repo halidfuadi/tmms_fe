@@ -9,7 +9,7 @@
     <CModalHeader closeButton
       ><h5 class="fw-bold">{{ title }}</h5></CModalHeader
     >
-    <CModalBody :class="{'p-5': isAddMultiple}">
+    <CModalBody :class="{ 'p-5': isAddMultiple }">
       <Toaster position="top-center" closeButton />
       <div class="mb-3">
         <CRow class="mb-2">
@@ -22,10 +22,11 @@
             />
             <treeselect
               v-else
-              v-model="form.line_id"
+              v-model="selectedLineId"
               :options="lineOptions"
               placeholder="Select Line"
-            />
+            >
+            </treeselect>
           </CCol>
           <CCol lg="6" class="mb-2">
             <CFormInput
@@ -36,7 +37,7 @@
             />
             <treeselect
               v-else
-              v-model="form.machine_id"
+              v-model="selectedMachineId"
               :options="machineOptions"
               placeholder="Select Machine"
             />
@@ -76,7 +77,7 @@
                       @focus="handleFocusAutoCompleteItemCheck"
                       @blur="handleBlurAutoCompleteItemCheck"
                     />
-                    <ul
+<!--                    <ul
                       v-if="noResultItemCheck"
                       class="autocomplete-result-list"
                       style="
@@ -87,7 +88,7 @@
                       "
                     >
                       <li class="autocomplete-result">No results found</li>
-                    </ul>
+                    </ul>-->
                     <table
                       class="table table-bordered table-hover"
                       v-bind="resultListProps"
@@ -159,10 +160,10 @@
             <div class="mb-2">
               <label class="form-label">Incharge</label>
               <select class="form-select" v-model="form.incharge_id">
-                <option value="" selected disabled>Select Incharge</option>
+                <option value="">Select Incharge</option>
                 <option
-                  v-for="(incharge, i) in inchargeOptions"
-                  :key="i"
+                  v-for="incharge in inchargeOptions"
+                  :key="incharge.value"
                   :value="incharge.value"
                 >
                   {{ incharge.label }}
@@ -282,7 +283,7 @@
                 v-if="item"
                 class="btn btn-sm col text-white"
                 color="danger"
-                @click="applyDelete()"
+                @click="confirmDeleteItemCheck()"
               >
                 Delete
               </CButton>
@@ -297,13 +298,17 @@
           </CRow>
         </template>
         <CollapseSparepartList
+          v-if="showSparepart"
           :is_execute="false"
+          :need-approval="true"
           :visibleSparepart="isVisibleSparepart"
-          :ledger_itemcheck_id="item?.ledger_itemcheck_id"
+          :ledger_itemcheck_id="ledgerItemCheckId"
+          :is-add-new-request="item === undefined || item === null"
+          @on-save="onSaveSparepart($event)"
         />
       </div>
       <template v-if="isAddMultiple">
-        <TableItemCheckModifiable :items="addedItems" :has-action="true">
+        <TableItemCheckModifiable :items="addedItems" :has-action="true" :incharge-options="inchargeOptions">
           <template #action="{ item, index }">
             <div class="d-flex align-items-center h-100">
               <CButton
@@ -333,6 +338,7 @@
         </CButton>
       </div>
     </CFooter>
+    <ModalConfirm title="Delete?" @confirm="applyDelete" />
   </CModal>
 </template>
 <script>
@@ -342,6 +348,8 @@ import { toast, Toaster } from "vue-sonner";
 import Treeselect from "@zanmato/vue3-treeselect";
 import "@zanmato/vue3-treeselect/dist/vue3-treeselect.min.css";
 import TableItemCheckModifiable from "@/components/Tpm/TableItemCheckModifiable.vue";
+import utils from "@/utils/CommonUtils";
+import ModalConfirm from "@/components/Tpm/Modal/ModalConfirm.vue";
 
 const defaultForm = {
   itemcheck_id: null,
@@ -361,10 +369,18 @@ const defaultForm = {
   upper_limit: null,
   is_counter: false,
   reasons: null,
+  isFullyLoaded: false,
 };
 
 export default {
   name: "ModalItemCheckDetail",
+  components: {
+    ModalConfirm,
+    TableItemCheckModifiable,
+    CollapseSparepartList,
+    Treeselect,
+    Toaster,
+  },
   props: {
     visible: [Boolean, String],
     item: Object,
@@ -381,12 +397,6 @@ export default {
       default: false,
     },
   },
-  components: {
-    TableItemCheckModifiable,
-    CollapseSparepartList,
-    Treeselect,
-    Toaster,
-  },
   data() {
     return {
       isVisibleSparepart: false,
@@ -400,6 +410,9 @@ export default {
       isLoadingItemCheck: false,
       isCounter: false,
       addedItems: [],
+      selectedLineId: null,
+      selectedMachineId: null,
+      newSparepartAdded: [],
     };
   },
   mounted() {
@@ -414,24 +427,23 @@ export default {
           ...this.item,
         };
       } else {
+        this.isVisibleSparepart = false;
         this.form = {
           ...defaultForm,
         };
       }
 
       this.isCounter = this.form.is_counter;
+      this.newSparepartAdded = [];
 
       if (this.isAddMultiple) {
         this.addedItems = [];
       }
+
+      this.setLoadedIncharge();
     },
-    form: {
-      deep: true,
-      handler(newValue, oldValue) {
-        if (newValue.line_id) {
-          this.getMachines();
-        }
-      },
+    selectedLineId(newValue, oldValue) {
+      this.getMachines();
     },
   },
   computed: {
@@ -443,6 +455,9 @@ export default {
     },
     noResultItemCheck() {
       return this.form.itemcheck_nm && this.itemCheckOptions.length === 0;
+    },
+    ledgerItemCheckId() {
+      return this.item?.ledger_itemcheck_id;
     },
   },
   methods: {
@@ -457,13 +472,7 @@ export default {
         });
 
         this.inchargeOptions = mapincharges;
-
-        this.form = {
-          ...this.form,
-          incharge_id: this.item
-            ? this.item.incharge_id
-            : mapincharges[0].value,
-        };
+        this.setLoadedIncharge();
       } catch (error) {
         console.log(error);
       }
@@ -477,12 +486,6 @@ export default {
           }&limit=20&page=1`
         );
         this.itemCheckOptions = response.data;
-        /* this.itemCheckOptions = response.data.map((item) => {
-           return {
-             id: item.machine_id,
-             label: item.machine_nm,
-           };
-         });*/
       } catch (e) {
         console.log(e);
       } finally {
@@ -500,10 +503,14 @@ export default {
             label: e.line_nm,
           }));
 
+          //this.lineOptions = response.data;
+
           if (this.form.line_id) {
             this.form = {
               ...this.form,
-              line_id: this.lineOptions.find((e) => e.id === this.form.line_id),
+              line_id: this.lineOptions.find(
+                (e) => e.uuid === this.form.line_id
+              ),
             };
 
             this.getMachines();
@@ -518,7 +525,7 @@ export default {
     async getMachines() {
       try {
         const { data: response } = await api.post(`/tpm/machines/search`, {
-          line_id: this.form.line_id,
+          line_id: this.selectedLineId,
         });
 
         if (response.data) {
@@ -533,7 +540,17 @@ export default {
         console.log("getMachines()", e);
       }
     },
-    async submit() {
+    setLoadedIncharge() {
+      this.form = {
+        ...this.form,
+        incharge_id: this.item
+          ? this.item.incharge_id
+          : this.inchargeOptions && this.inchargeOptions.length > 0
+          ? this.inchargeOptions[0].value
+          : null,
+      };
+    },
+    submit() {
       let mappedForm = {
         ...this.form,
       };
@@ -564,15 +581,35 @@ export default {
       }
 
       if (this.isAddMultiple) {
+        if(!this.selectedLineId || !this.selectedMachineId){
+          toast.warning("Line dan Mesin harus di isi", {
+            description: "Lengkapi dan silahkan coba lagi",
+          });
+          return;
+        }
+
         this.addedItems = [
-          ...this.addedItems,
           {
             ...mappedForm,
+            line_id: this.selectedLineId,
+            machine_id: this.selectedMachineId,
+            line_nm: this.lineOptions.find((e) => e.id === this.selectedLineId)
+              ?.label,
+            machine_nm: this.machineOptions.find(
+              (e) => e.id === this.selectedMachineId
+            )?.label,
           },
+          ...this.addedItems,
         ];
         return;
       }
 
+      this.performSave({
+        itemCheck: mappedForm,
+        sparepart: this.newSparepartAdded,
+      });
+    },
+    async performSave(mappedForm) {
       try {
         this.isSubmitLoading = true;
 
@@ -583,14 +620,11 @@ export default {
           mappedForm
         );
         if (result.status === 200) {
-          toast.success("Data berhasil di simpan", {
-            description: "Item check sedang dalam proses approval",
-          });
+          utils.showSuccessResponse("Item check sedang dalam proses approval");
           this.close(true);
+          this.emitter.emit("updatedItemRequest", true);
         } else {
-          toast.error("Terjadi kesalahan saat menyimpan data", {
-            description: result.data.message?.message ?? result.data.message,
-          });
+          utils.showResponseError(result.response.data.message?.message);
         }
       } catch (e) {
         toast.error("Terjadi kesalahan saat menyimpan data", {
@@ -600,31 +634,28 @@ export default {
         this.isSubmitLoading = false;
       }
     },
-    applyDelete() {},
+    confirmDeleteItemCheck() {
+      this.$store.dispatch("MODALS/open", "DialogKonfirmasi");
+    },
     onChangeCounter(event) {
       this.isCounter =
         event.target.value === "true" || event.target.value === true;
     },
     async autoCompleteItemCheck(input) {
-      console.log("request");
       await this.getItemCheckOptions(input);
-      console.log("done");
-      const items = [...this.itemCheckOptions];
 
-      return this.itemCheckOptions.filter((item) => {
+      const data = this.itemCheckOptions.filter((item) => {
         return item.itemcheck_nm.toLowerCase().includes(input.toLowerCase());
       });
 
-      /*return new Promise(async (resolve) => {
-        if (input.length < 1) {
-          return [];
-        }
+      if (data.length === 0) {
+        this.form = {
+          ...this.form,
+          itemcheck_nm: input,
+        };
+      }
 
-        const items = [...this.itemCheckOptions];
-        resolve(items.filter((item) => {
-          return item.itemcheck_nm.toLowerCase().includes(input.toLowerCase());
-        }));
-      });*/
+      return data;
     },
     handleFocusAutoCompleteItemCheck() {
       this.isFocusedItemCheck = true;
@@ -637,28 +668,63 @@ export default {
         ...item,
         incharge_id: this.form.incharge_id,
         is_counter: item.is_counter ? "true" : "false",
-        ledger_id: this.ledgerId ? this.ledgerId : null,
-        line_id: this.form.line_id ? this.form.line_id.id : null,
       };
+
+      if (!this.isAddMultiple) {
+        this.form = {
+          ...this.form,
+          line_id: this.form.line_id ? this.form.line_id : null,
+          ledger_id: this.ledgerId ? this.ledgerId : null,
+        };
+      } else {
+        this.form = {
+          ...this.form,
+          ledger_id: item.ledger_id,
+        };
+      }
 
       this.isCounter = item.is_counter;
     },
     setSelectedItemCheck(item) {
       return item.itemcheck_nm;
     },
-    validatedAddedItemCheckMultiple() {
-      if (
-        !this.form.line_id
-        || !this.form.machine_id
-      ) {
-        toast.warning("Line dan machine harus diisi");
+    saveItemCheckMultiple() {
+      const mappedAddedItems = [...this.addedItems];
+
+      if (mappedAddedItems.length === 0) {
+        toast.error("Tidak ada item yg di tambahkan", {
+          description: "Tambahkan item dan silahkan coba lagi",
+        });
         return;
       }
 
+      this.performSave(mappedAddedItems);
     },
-    saveItemCheckMultiple() {},
     deleteAddedItemCheckMultiple(item, index) {
       this.addedItems = [...this.addedItems.filter((_, i) => i !== index)];
+    },
+    onSaveSparepart(spareparts) {
+      this.newSparepartAdded = spareparts;
+    },
+    async applyDelete() {
+      try {
+        const result = await api.delete(
+          `/tpm/itemchecks`,
+          this.item.ledger_itemcheck_id
+        );
+        if (result.status === 200) {
+          utils.showSuccessResponse("Item check berhasil di hapus");
+          this.close(true);
+        } else {
+          utils.showResponseError(
+            result.response.data.message?.message ??
+              result.response.data.message
+          );
+        }
+      } catch (e) {
+        console.error("applyDelete()", e);
+        utils.showResponseError(e);
+      }
     },
     close(reload = false) {
       this.$emit("on-close", reload);

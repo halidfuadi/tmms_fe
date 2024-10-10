@@ -101,7 +101,7 @@
                         <CTableHead>
                           <CTableRow>
                             <CTableHeaderCell scope="col"
-                              >COLUMN
+                            >COLUMN
                             </CTableHeaderCell>
                             <CTableHeaderCell scope="col">OLD</CTableHeaderCell>
                             <CTableHeaderCell scope="col">NEW</CTableHeaderCell>
@@ -111,28 +111,28 @@
                           <CTableRow>
                             <CTableDataCell>ITEM NAME</CTableDataCell>
                             <CTableDataCell
-                              >{{ update.itemcheck_nm_old }}
+                            >{{ update.itemcheck_nm_old }}
                             </CTableDataCell>
                             <CTableDataCell
-                              >{{ update.itemcheck_nm_new }}
+                            >{{ update.itemcheck_nm_new }}
                             </CTableDataCell>
                           </CTableRow>
                           <CTableRow>
                             <CTableDataCell>METHOD</CTableDataCell>
                             <CTableDataCell
-                              >{{ update.method_check_old }}
+                            >{{ update.method_check_old }}
                             </CTableDataCell>
                             <CTableDataCell
-                              >{{ update.method_check_new }}
+                            >{{ update.method_check_new }}
                             </CTableDataCell>
                           </CTableRow>
                           <CTableRow>
                             <CTableDataCell>DURATION</CTableDataCell>
                             <CTableDataCell
-                              >{{ update.duration_old }}
+                            >{{ update.duration_old }}
                             </CTableDataCell>
                             <CTableDataCell
-                              >{{ update.duration_new }}
+                            >{{ update.duration_new }}
                             </CTableDataCell>
                           </CTableRow>
                           <CTableRow>
@@ -143,34 +143,34 @@
                           <CTableRow>
                             <CTableDataCell>PERIOD</CTableDataCell>
                             <CTableDataCell
-                              >{{ update.val_periodic_old }}
+                            >{{ update.val_periodic_old }}
                               {{ update.period_id_old }}
                             </CTableDataCell>
                             <CTableDataCell
-                              >{{ update.val_periodic_new }}
+                            >{{ update.val_periodic_new }}
                               {{ update.period_id_new }}
                             </CTableDataCell>
                           </CTableRow>
                           <CTableRow>
                             <CTableDataCell>STANDARD</CTableDataCell>
                             <CTableDataCell
-                              >{{ update.standard_measurement_old }}
+                            >{{ update.standard_measurement_old }}
                             </CTableDataCell>
                             <CTableDataCell
-                              >{{ update.standard_measurement_new }}
+                            >{{ update.standard_measurement_new }}
                             </CTableDataCell>
                           </CTableRow>
                           <CTableRow>
                             <CTableDataCell>UPPER</CTableDataCell>
                             <CTableDataCell
-                              >{{
+                            >{{
                                 update.upper_limit_old
                                   ? update.upper_limit_old
                                   : 0
                               }}
                             </CTableDataCell>
                             <CTableDataCell
-                              >{{
+                            >{{
                                 update.upper_limit_new
                                   ? update.upper_limit_new
                                   : 0
@@ -180,14 +180,14 @@
                           <CTableRow>
                             <CTableDataCell>LOWER</CTableDataCell>
                             <CTableDataCell
-                              >{{
+                            >{{
                                 update.lower_limit_old
                                   ? update.lower_limit_old
                                   : 0
                               }}
                             </CTableDataCell>
                             <CTableDataCell
-                              >{{
+                            >{{
                                 update.lower_limit_new
                                   ? update.lower_limit_new
                                   : 0
@@ -197,7 +197,7 @@
                           <CTableRow>
                             <CTableDataCell>REASON</CTableDataCell>
                             <CTableDataCell colspan="2"
-                              >{{ update.reason }}
+                            >{{ update.reason }}
                             </CTableDataCell>
                           </CTableRow>
                         </CTableBody>
@@ -235,7 +235,8 @@
 </template>
 <script>
 import api from "@/apis/CommonAPI";
-import { toast, Toaster } from "vue-sonner";
+import {toast, Toaster} from "vue-sonner";
+import utils from "@/utils/CommonUtils";
 
 export default {
   name: "newUpdate",
@@ -312,17 +313,13 @@ export default {
     async denyAdded(data) {
       const loader = this.$loading.show();
       try {
-        const result = await api.post(`/tpm/itemchecks/denyAdded`, data, (errorData, error) => {
-          if(errorData && error){
-            toast.error("Terjadi kesalahan saat menyimpan data", {
-              description: errorData.message,
-            });
-          }
-        });
+        const result = await api.post(`/tpm/itemchecks/denyAdded`, data);
         console.log('result', result);
         if (result.status === 200) {
           this.loadItem();
           toast.success("Item check baru berhasil di tolak");
+        } else {
+          utils.showResponseError(result.response?.data?.message?.message ?? result.response?.data?.message);
         }
       } catch (error) {
         console.log('error denyAdded()', error);

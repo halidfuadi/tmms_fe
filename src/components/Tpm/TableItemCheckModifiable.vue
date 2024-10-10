@@ -67,7 +67,17 @@
                   <input v-model="item.method_check" class="form-control" />
                 </td>
                 <td class="item-check text-center">
-                  <input v-model="item.incharge_nm" class="form-control" />
+                  <select class="form-select" v-model="item.incharge_id">
+                    <option value="">Select Incharge</option>
+                    <option
+                      v-for="incharge in inchargeOptions"
+                      :key="incharge.value"
+                      :value="incharge.value"
+                    >
+                      {{ incharge.label }}
+                    </option>
+                  </select>
+<!--                  <input v-model="item.incharge_nm" class="form-control" />-->
                 </td>
                 <td class="item-check text-center">
                   <input v-model="item.upper_limit" class="form-control" />
@@ -102,6 +112,7 @@ export default {
   name: "TableItemCheckModifiable",
   props: {
     items: Array,
+    inchargeOptions: Array,
   },
   components: {
     CIcon,
