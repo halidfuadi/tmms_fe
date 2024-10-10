@@ -60,7 +60,7 @@ export default {
   data() {
     return {
       form: {
-        month: `${moment().format("YYYY-MM")}`,
+        month: null,
         plant_id: null,
         line_id: null,
         machine_id: null,
@@ -113,10 +113,16 @@ export default {
   },
   methods: {
     search() {
-      let mapForm = Object.keys(this.form)
-        .map((key) => `${key}=${this.form[key]}`)
-        .join("&");
-      this.$emit("getSchedules", mapForm);
+      if(this.form.line_id == undefined) {
+        this.form.line_id = null;
+      }
+      if(this.form.machine_id == undefined) {
+        this.form.machine_id = null;
+      }
+      if(this.form.month == '') {
+        this.form.month = null;
+      }
+      this.$emit("onSubmitSearch", this.form);
     },
     async getIncharge(filter = {}) {
       try {
@@ -136,7 +142,7 @@ export default {
     async getMachine(filter = {}) {
       try {
         let machine = await api.post(`/tpm/filter/machine`, filter);
-        console.log(filter);
+        
         let mapMachines = await machine.data.data.map((item) => {
           return {
             id: item.machine_id,
